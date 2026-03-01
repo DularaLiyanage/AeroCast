@@ -12,7 +12,7 @@ import '../widgets/policy_section.dart';
 import '../widgets/hero_card.dart';
 
 class ForecastScreen extends StatefulWidget {
-  const ForecastScreen({Key? key}) : super(key: key);
+  const ForecastScreen({super.key});
 
   @override
   State<ForecastScreen> createState() => _ForecastScreenState();
