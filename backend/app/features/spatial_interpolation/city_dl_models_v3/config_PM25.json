@@ -1,0 +1,26 @@
+{
+  "target": "PM25",
+  "features": [
+    "PM10",
+    "NO2",
+    "SO2",
+    "O3",
+    "CO",
+    "NOX",
+    "WS",
+    "WD",
+    "AT",
+    "RH",
+    "BP",
+    "SolarRad",
+    "Rain",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "station_Battaramulla",
+    "station_Kandy"
+  ],
+  "sequence_length": 24,
+  "horizon": 1
+}

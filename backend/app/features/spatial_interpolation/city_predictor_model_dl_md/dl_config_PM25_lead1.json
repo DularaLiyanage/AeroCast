@@ -1,0 +1,252 @@
+{
+  "base_target": "PM25",
+  "target": "PM25_lead1",
+  "horizon_hours": 1,
+  "window": 24,
+  "test_months": 6,
+  "lags": [
+    1,
+    3,
+    6,
+    12,
+    24
+  ],
+  "rolls": [
+    3,
+    6,
+    24
+  ],
+  "lag_roll_cols": [
+    "PM25",
+    "PM10",
+    "NO2",
+    "SO2",
+    "O3",
+    "CO",
+    "NOX",
+    "WS",
+    "WD",
+    "AT",
+    "RH",
+    "BP",
+    "SolarRad",
+    "Rain"
+  ],
+  "num_features": [
+    "PM25",
+    "PM10",
+    "NO2",
+    "SO2",
+    "O3",
+    "CO",
+    "NOX",
+    "WS",
+    "WD",
+    "AT",
+    "RH",
+    "BP",
+    "SolarRad",
+    "Rain",
+    "u",
+    "v",
+    "lat",
+    "lon",
+    "month",
+    "day",
+    "hour_sin",
+    "hour_cos",
+    "PM25_lag1",
+    "PM25_lag3",
+    "PM25_lag6",
+    "PM25_lag12",
+    "PM25_lag24",
+    "PM25_roll3",
+    "PM25_roll6",
+    "PM25_roll24",
+    "PM10_lag1",
+    "PM10_lag3",
+    "PM10_lag6",
+    "PM10_lag12",
+    "PM10_lag24",
+    "PM10_roll3",
+    "PM10_roll6",
+    "PM10_roll24",
+    "NO2_lag1",
+    "NO2_lag3",
+    "NO2_lag6",
+    "NO2_lag12",
+    "NO2_lag24",
+    "NO2_roll3",
+    "NO2_roll6",
+    "NO2_roll24",
+    "SO2_lag1",
+    "SO2_lag3",
+    "SO2_lag6",
+    "SO2_lag12",
+    "SO2_lag24",
+    "SO2_roll3",
+    "SO2_roll6",
+    "SO2_roll24",
+    "O3_lag1",
+    "O3_lag3",
+    "O3_lag6",
+    "O3_lag12",
+    "O3_lag24",
+    "O3_roll3",
+    "O3_roll6",
+    "O3_roll24",
+    "CO_lag1",
+    "CO_lag3",
+    "CO_lag6",
+    "CO_lag12",
+    "CO_lag24",
+    "CO_roll3",
+    "CO_roll6",
+    "CO_roll24",
+    "NOX_lag1",
+    "NOX_lag3",
+    "NOX_lag6",
+    "NOX_lag12",
+    "NOX_lag24",
+    "NOX_roll3",
+    "NOX_roll6",
+    "NOX_roll24",
+    "WS_lag1",
+    "WS_lag3",
+    "WS_lag6",
+    "WS_lag12",
+    "WS_lag24",
+    "WS_roll3",
+    "WS_roll6",
+    "WS_roll24",
+    "WD_lag1",
+    "WD_lag3",
+    "WD_lag6",
+    "WD_lag12",
+    "WD_lag24",
+    "WD_roll3",
+    "WD_roll6",
+    "WD_roll24",
+    "AT_lag1",
+    "AT_lag3",
+    "AT_lag6",
+    "AT_lag12",
+    "AT_lag24",
+    "AT_roll3",
+    "AT_roll6",
+    "AT_roll24",
+    "RH_lag1",
+    "RH_lag3",
+    "RH_lag6",
+    "RH_lag12",
+    "RH_lag24",
+    "RH_roll3",
+    "RH_roll6",
+    "RH_roll24",
+    "BP_lag1",
+    "BP_lag3",
+    "BP_lag6",
+    "BP_lag12",
+    "BP_lag24",
+    "BP_roll3",
+    "BP_roll6",
+    "BP_roll24",
+    "SolarRad_lag1",
+    "SolarRad_lag3",
+    "SolarRad_lag6",
+    "SolarRad_lag12",
+    "SolarRad_lag24",
+    "SolarRad_roll3",
+    "SolarRad_roll6",
+    "SolarRad_roll24",
+    "Rain_lag1",
+    "Rain_lag3",
+    "Rain_lag6",
+    "Rain_lag12",
+    "Rain_lag24",
+    "Rain_roll3",
+    "Rain_roll6",
+    "Rain_roll24"
+  ],
+  "cat_features": [
+    "station"
+  ],
+  "final_feature_dim": 136,
+  "split_info": {
+    "Battaramulla": {
+      "last_ts": "2024-12-31 22:00:00",
+      "test_start": "2024-06-30 22:00:00",
+      "train_rows": 48166,
+      "test_rows": 4417
+    },
+    "Kandy": {
+      "last_ts": "2024-12-31 22:00:00",
+      "test_start": "2024-06-30 22:00:00",
+      "train_rows": 48166,
+      "test_rows": 4417
+    }
+  },
+  "bounds": {
+    "PM25": [
+      0.0,
+      1000.0
+    ],
+    "PM10": [
+      0.0,
+      1500.0
+    ],
+    "NO2": [
+      0.0,
+      1000.0
+    ],
+    "SO2": [
+      0.0,
+      1000.0
+    ],
+    "O3": [
+      0.0,
+      1000.0
+    ],
+    "CO": [
+      0.0,
+      50000.0
+    ],
+    "NOX": [
+      0.0,
+      2000.0
+    ],
+    "WS": [
+      0.0,
+      60.0
+    ],
+    "WD": [
+      0.0,
+      360.0
+    ],
+    "AT": [
+      -5.0,
+      50.0
+    ],
+    "RH": [
+      0.0,
+      100.0
+    ],
+    "BP": [
+      800.0,
+      1100.0
+    ],
+    "SolarRad": [
+      0.0,
+      1400.0
+    ],
+    "Rain": [
+      0.0,
+      500.0
+    ]
+  },
+  "time_features": {
+    "month": true,
+    "day": true,
+    "hour": "sin_cos"
+  }
+}

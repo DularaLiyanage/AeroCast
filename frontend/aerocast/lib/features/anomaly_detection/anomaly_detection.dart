@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AnomalyScreen extends StatelessWidget {
-  const AnomalyScreen({Key? key}) : super(key: key);
+  const AnomalyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,0 +1,40 @@
+{
+  "target": "NO2",
+  "window": 24,
+  "num_features": [
+    "PM25",
+    "PM10",
+    "NO2",
+    "SO2",
+    "O3",
+    "CO",
+    "NOX",
+    "WS",
+    "WD",
+    "AT",
+    "RH",
+    "BP",
+    "SolarRad",
+    "Rain",
+    "PM25_lag1",
+    "PM10_lag1",
+    "NO2_lag1",
+    "hour",
+    "dow",
+    "month",
+    "is_weekend",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "lat",
+    "lon",
+    "u",
+    "v"
+  ],
+  "cat_features": [
+    "station"
+  ],
+  "final_feature_dim": 31,
+  "test_start": "2020-11-30 08:00:00"
+}
