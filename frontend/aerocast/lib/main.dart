@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 // Import component screens
 import 'features/time_series_forecasting/time_series_forecasting.dart';
 import 'features/spatial_interpolation/spatial_interpolation.dart';
-import 'features/risk_scoring/risk_scoring.dart';
 import 'features/anomaly_detection/anomaly_detection.dart';
 import 'features/risk_scoring/providers/aqi_provider.dart';
+import 'features/risk_scoring/screens/landing_screen.dart';
 
 void main() {
   runApp(const AeroCastApp());
@@ -18,7 +18,7 @@ class AeroCastApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => AqiProvider(),
+      create: (context) => AqiProvider(),
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'AeroCast',

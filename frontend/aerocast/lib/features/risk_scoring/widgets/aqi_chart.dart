@@ -92,7 +92,7 @@ class _AqiChartState extends State<AqiChart> {
           LineChartData(
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (touchedSpot) => Colors.black,
+                tooltipBgColor: Colors.black,
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
                     if (spot.barIndex != 2) return null;
