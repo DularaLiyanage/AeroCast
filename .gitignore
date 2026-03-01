@@ -27,3 +27,14 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Large ML model and data files
+*.joblib
+*.pkl
+*.dbf
+*.shp
+*.shx
+*.prj
+*.tif
+*.hdr
+*.tfw

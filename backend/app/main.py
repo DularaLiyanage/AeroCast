@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Download large files on startup
+from download_models import download_if_missing
+download_if_missing()
+
 from app.features.time_series_forecasting.router import router as time_forecast_router
 from app.features.spatial_interpolation.router import router as spatial_router
 from app.features.risk_scoring.router import router as aqi_router
