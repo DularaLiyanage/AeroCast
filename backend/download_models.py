@@ -9,9 +9,6 @@ except ImportError:
     print("⚠️  gdown not installed - Google Drive downloads will not work")
     GDOWN_AVAILABLE = False
 
-# Map each file to its download source
-# For Google Drive: use file ID (e.g., "1aBcDeFgHiJkLmNoPqRsTuVwXyZ")
-# For Zenodo: use full download URL (e.g., "https://zenodo.org/records/1234567/files/filename?download=1")
 LARGE_FILES = {
     # Google Drive files (use file IDs)
     # Only the cache file is needed - contains processed geospatial auxiliary data

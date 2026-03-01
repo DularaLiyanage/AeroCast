@@ -31,6 +31,9 @@ doc/api/
 # Large ML model and data files
 *.joblib
 *.pkl
+*.part
+*.tmp
+*.temp
 *.dbf
 *.shp
 *.shx
@@ -38,7 +41,6 @@ doc/api/
 *.tif
 *.hdr
 *.tfw
-
 
 # Specific cache file
 cache.pkl
