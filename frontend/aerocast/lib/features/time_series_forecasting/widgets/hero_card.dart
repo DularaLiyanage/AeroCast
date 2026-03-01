@@ -8,11 +8,11 @@ class HeroCard extends StatelessWidget {
   final String time;
 
   const HeroCard({
-    Key? key,
+    super.key,
     required this.value,
     required this.pollutant,
     required this.time,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
