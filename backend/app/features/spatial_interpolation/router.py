@@ -302,31 +302,29 @@ def hover_value(lat: float, lon: float, target: str, datetime_str: str):
                 "distance_km": float(min_distance)
             }
 
-        # Get most recent observed values from stations instead of predictions
-        print(f"  Getting observed station values...", flush=True)
-        
-        # Get most recent observed values for both stations
-        b_obs = obs[(obs["station"] == "Battaramulla") & obs[target].notna()]
-        k_obs = obs[(obs["station"] == "Kandy") & obs[target].notna()]
-        
-        if b_obs.empty or k_obs.empty:
-            return {
-                "method": "out_of_range",
-                "value": None,
-                "distance_km": float(min_distance)
-            }
-        
-        b_value = float(b_obs.sort_values("datetime").iloc[-1][target])
-        k_value = float(k_obs.sort_values("datetime").iloc[-1][target])
-        
-        print(f"  ✓ Battaramulla: {b_value:.2f}, Kandy: {k_value:.2f}", flush=True)
+        # Otherwise, perform spatial prediction
+        print(f"  Loading model artifacts for {target}...", flush=True)
+        model, preprocess, cfg = load_artifacts(target)
+
+        # Predict at both stations
+        print(f"  Predicting station values...", flush=True)
+        b_raw = predict_one_station(
+            model, preprocess, cfg, "Battaramulla", dt_base, overrides=None
+        )
+        k_raw = predict_one_station(
+            model, preprocess, cfg, "Kandy", dt_base, overrides=None
+        )
+
+        b_pred = clamp_value(target, b_raw)
+        k_pred = clamp_value(target, k_raw)
+        print(f"  ✓ Battaramulla: {b_pred:.2f}, Kandy: {k_pred:.2f}", flush=True)
 
         # Spatial interpolation
         station_coords = [
             (STATION_META["Battaramulla"]["lat"], STATION_META["Battaramulla"]["lon"]),
             (STATION_META["Kandy"]["lat"], STATION_META["Kandy"]["lon"]),
         ]
-        station_values = [b_value, k_value]
+        station_values = [b_pred, k_pred]
         target_coord = (lat, lon)
 
         print(f"  Performing ensemble spatial interpolation...", flush=True)

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AQIScreen extends StatelessWidget {
-  const AQIScreen({Key? key}) : super(key: key);
+  const AQIScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

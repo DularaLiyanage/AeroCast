@@ -11,7 +11,7 @@ void main() {
 }
 
 class AeroCastApp extends StatelessWidget {
-  const AeroCastApp({Key? key}) : super(key: key);
+  const AeroCastApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class AeroCastApp extends StatelessWidget {
 ////////////////////////////////////////////////////////
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen> {
 ////////////////////////////////////////////////////////
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   Widget _buildButton(
       BuildContext context,
