@@ -15,7 +15,7 @@ except ImportError:
 LARGE_FILES = {
     # Google Drive files (use file IDs)
     # Only the cache file is needed - contains processed geospatial auxiliary data
-    "backend/app/features/spatial_interpolation/sri_lanka_data/spatial_auxiliary_cache.pkl": "YOUR_GOOGLE_DRIVE_FILE_ID_FOR_CACHE",
+    "backend/app/features/spatial_interpolation/sri_lanka_data/spatial_auxiliary_cache.pkl": "1yOALuZye_XsbK9hi0cZtUWeITX_ibSag",
 }
 
 def download_if_missing():
