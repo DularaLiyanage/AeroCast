@@ -44,7 +44,7 @@ OBS_CACHE = BASE_DIR / "spatial_interpolation" / "clean" / "obs_cache.pkl"
 SL_GEOJSON = BASE_DIR / "spatial_interpolation" / "data" / "sri_lanka_boundary.geojson"
 
 # Geospatial data paths
-GEOSPATIAL_DIR = BASE_DIR / "backend" / "sri_lanka_data"
+GEOSPATIAL_DIR = BASE_DIR / "spatial_interpolation" / "sri_lanka_data"
 ELEVATION_TIF = GEOSPATIAL_DIR / "srtm_68_11.tif"
 LANDCOVER_TIFS = [
     GEOSPATIAL_DIR / "landcover_N06E078.tif",

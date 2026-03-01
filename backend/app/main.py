@@ -1,19 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.features.time_series_forecasting.router import router as time_forecast_router
-from app.features.spatial_interpolation.router import router as spatial_router
-from app.features.risk_scoring.router import router as aqi_router
-from app.features.anomaly_detection.router import router as anomaly_router
-from app.features.spatial_interpolation.router import router as spatial_router
-from app.features.risk_scoring.router import router as aqi_router
-from app.features.anomaly_detection.router import router as anomaly_router
-from app.features.spatial_interpolation.router import router as spatial_router
-from app.features.risk_scoring.router import router as aqi_router
-from app.features.anomaly_detection.router import router as anomaly_router
-from app.features.spatial_interpolation.router import router as spatial_router
-from app.features.risk_scoring.router import router as aqi_router
-from app.features.anomaly_detection.router import router as anomaly_router
+from .features.time_series_forecasting.router import router as time_forecast_router
+from .features.spatial_interpolation.router import router as spatial_router
+from .features.risk_scoring.router import router as aqi_router
+from .features.anomaly_detection.router import router as anomaly_router
 
 app = FastAPI(title="AeroCast Backend")
 

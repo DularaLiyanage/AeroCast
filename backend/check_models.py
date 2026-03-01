@@ -4,7 +4,7 @@ import os
 def check_required_files():
     """Check if required large files exist locally."""
     required_files = [
-        "backend/app/features/spatial_interpolation/sri_lanka_data/spatial_auxiliary_cache.pkl",
+        "app/features/spatial_interpolation/sri_lanka_data/spatial_auxiliary_cache.pkl",
     ]
 
     for filepath in required_files:
