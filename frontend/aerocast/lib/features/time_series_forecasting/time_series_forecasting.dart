@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/api_service.dart';
 
 class ForecastScreen extends StatefulWidget {
-  const ForecastScreen({super.key});
+  const ForecastScreen({Key? key}) : super(key: key);
 
   @override
   State<ForecastScreen> createState() => _ForecastScreenState();
