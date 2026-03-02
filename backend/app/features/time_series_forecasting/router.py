@@ -9,8 +9,6 @@ router = APIRouter()
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # 2. Go up 2 levels to reach the 'app' folder
-# Level 1 up: .../backend/app/features
-# Level 2 up: .../backend/app
 app_dir = os.path.abspath(os.path.join(current_dir, "../../"))
 
 # 3. Build the path to the JSON file from the 'app' folder
