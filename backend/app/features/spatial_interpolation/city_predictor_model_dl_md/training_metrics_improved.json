@@ -1,0 +1,12 @@
+{
+    "final_train_loss": 44.49778366088867,
+    "final_val_loss": 55.767677307128906,
+    "final_train_r2": 0.8743355870246887,
+    "final_val_r2": 0.8192595839500427,
+    "final_train_accuracy_pct": 87.43355870246887,
+    "final_val_accuracy_pct": 81.92595839500427,
+    "best_val_r2": 0.8425363302230835,
+    "best_val_accuracy_pct": 84.25363302230835,
+    "best_val_r2_epoch": 17,
+    "total_epochs": 27
+}

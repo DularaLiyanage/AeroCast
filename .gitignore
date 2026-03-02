@@ -27,3 +27,37 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Large ML model and data files
+*.joblib
+*.pkl
+*.part
+*.tmp
+*.temp
+*.dbf
+*.shp
+*.shx
+*.prj
+*.tif
+*.hdr
+*.tfw
+
+# Specific cache file
+cache.pkl
+
+# Ignore entire data folder (downloaded datasets)
+data/
+
+# Ignore models folder (if you store trained models)
+models/
+
+# Ignore common ML model formats
+*.pt
+*.pth
+*.h5
+*.ckpt
+
+# Ignore compressed dataset files
+*.zip
+*.tar
+*.gz

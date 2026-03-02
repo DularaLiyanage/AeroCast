@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class XaiSection extends StatelessWidget { // FIX: Renamed Class
   final Map<String, dynamic> rawXaiData; // FIX: Added variable
 
-  const XaiSection({Key? key, required this.rawXaiData}) : super(key: key);
+  const XaiSection({super.key, required this.rawXaiData});
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +159,7 @@ class XaiSection extends StatelessWidget { // FIX: Renamed Class
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

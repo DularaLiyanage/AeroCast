@@ -5,7 +5,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
   final List<dynamic> values;
   final String pollutant;
 
-  const PolicySection({Key? key, required this.values, required this.pollutant}) : super(key: key);
+  const PolicySection({super.key, required this.values, required this.pollutant});
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +125,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
                 ],
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

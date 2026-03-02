@@ -1,21 +1,18 @@
 import '../../../../core/api_service.dart';
 
 class ForecastService {
-  // CHECK THIS: Your backend logs show the path is "/forecast", not "/predict"
-  // If your Python router has @router.post("/predict"), change this to "/time_forecast/predict"
-  // If your Python router has @router.post("/forecast"), keep it as is.
   static const String _endpoint = "/time_forecast/forecast"; 
 
   Future<Map<String, dynamic>> fetchForecast(String location) async {
     try {
-      print("Sending request to: $_endpoint for $location"); // Debug Print 1
+      print("Sending request to: $_endpoint for $location");
       
       final response = await ApiService.post(
         _endpoint, 
         {"location": location}
       );
 
-      print("Server Response: $response"); // Debug Print 2 (CRITICAL)
+      print("Server Response: $response");
 
       if (response == null) {
         throw Exception("Server returned null response");
