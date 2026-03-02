@@ -1,28 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 // Import component screens
 import 'features/time_series_forecasting/time_series_forecasting.dart';
 import 'features/spatial_interpolation/spatial_interpolation.dart';
-import 'features/risk_scoring/risk_scoring.dart';
 import 'features/anomaly_detection/anomaly_detection.dart';
+import 'features/risk_scoring/providers/aqi_provider.dart';
+import 'features/risk_scoring/screens/landing_screen.dart';
 
 void main() {
   runApp(const AeroCastApp());
 }
 
 class AeroCastApp extends StatelessWidget {
-  const AeroCastApp({Key? key}) : super(key: key);
+  const AeroCastApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'AeroCast',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
+    return ChangeNotifierProvider(
+      create: (context) => AqiProvider(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'AeroCast',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: Colors.grey[100],
+        ),
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }
@@ -32,14 +37,13 @@ class AeroCastApp extends StatelessWidget {
 ////////////////////////////////////////////////////////
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -64,18 +68,11 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(
-              Icons.air,
-              size: 80,
-              color: Colors.blue,
-            ),
+            Icon(Icons.air, size: 80, color: Colors.blue),
             SizedBox(height: 20),
             Text(
               "AeroCast",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
             CircularProgressIndicator(),
@@ -91,13 +88,9 @@ class _SplashScreenState extends State<SplashScreen> {
 ////////////////////////////////////////////////////////
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
-  Widget _buildButton(
-      BuildContext context,
-      String title,
-      Widget screen,
-      ) {
+  Widget _buildButton(BuildContext context, String title, Widget screen) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: SizedBox(
@@ -105,15 +98,9 @@ class HomeScreen extends StatelessWidget {
         height: 55,
         child: ElevatedButton(
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => screen),
-            );
+            Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
           },
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 16),
-          ),
+          child: Text(title, style: const TextStyle(fontSize: 16)),
         ),
       ),
     );
@@ -130,32 +117,15 @@ class HomeScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-
             const SizedBox(height: 30),
 
-            _buildButton(
-              context,
-              "Forecast",
-              const ForecastScreen(),
-            ),
+            _buildButton(context, "Forecast", const ForecastScreen()),
 
-            _buildButton(
-              context,
-              "Spatial",
-              const SpatialScreen(),
-            ),
+            _buildButton(context, "Spatial", const SpatialScreen()),
 
-            _buildButton(
-              context,
-              "AQI",
-              const AQIScreen(),
-            ),
+            _buildButton(context, "AQI", const LandingScreen()),
 
-            _buildButton(
-              context,
-              "Anomaly",
-              const AnomalyScreen(),
-            ),
+            _buildButton(context, "Anomaly", const AnomalyScreen()),
           ],
         ),
       ),

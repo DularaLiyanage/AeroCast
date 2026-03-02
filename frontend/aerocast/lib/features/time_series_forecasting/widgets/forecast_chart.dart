@@ -9,12 +9,12 @@ class ForecastChart extends StatelessWidget {
   final Function(int) onHourChanged;     // <--- Callback to Parent
 
   const ForecastChart({
-    Key? key, 
+    super.key, 
     required this.values, 
     required this.pollutant,
     required this.selectedHourIndex,     // <--- Required
     required this.onHourChanged,         // <--- Required
-  }) : super(key: key);
+  });
 
   DateTime _getTomorrowStart() {
     DateTime now = DateTime.now();
@@ -124,7 +124,7 @@ class ForecastChart extends StatelessWidget {
                     }).toList();
                   },
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (touchedSpot) => Colors.black,
+                    tooltipBgColor: Colors.black,
                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                       return touchedBarSpots.map((barSpot) {
                         return LineTooltipItem(
