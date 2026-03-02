@@ -7,11 +7,11 @@ class PollutantSelector extends StatelessWidget { // FIX: Renamed Class
   final Function(String) onPollutantChanged; // FIX: Callback to parent
 
   const PollutantSelector({
-    Key? key, 
+    super.key, 
     required this.forecastData, 
     required this.selectedPollutant,
     required this.onPollutantChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

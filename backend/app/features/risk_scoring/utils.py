@@ -3,6 +3,11 @@ import numpy as np
 import requests
 import holidays
 from datetime import datetime, timedelta
+import warnings
+from sklearn.exceptions import InconsistentVersionWarning
+
+# Suppress sklearn version warnings
+warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
 
 # Constants
 LOCATION_COORDS = {
