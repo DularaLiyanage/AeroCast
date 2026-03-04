@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -9,12 +10,7 @@ import 'package:latlong2/latlong.dart' as latlong;
 // Update this to your backend IP
 const String apiBase = "http://10.0.2.2:8000";
 
-// Alternative tile providers (if OpenStreetMap blocks access):
-// CartoDB: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
-// Stadia Maps: 'https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png'
-
 // OpenStreetMap User-Agent: Custom TileProvider with proper HTTP headers for OSM compliance
-
 class UserAgentTileProvider extends TileProvider {
   final http.Client _client = http.Client();
 
@@ -39,8 +35,16 @@ class UserAgentTileProvider extends TileProvider {
 }
 
 void main() {
-  runApp(const MaterialApp(
-    home: SpatialScreen(),
+  runApp(MaterialApp(
+    theme: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+      ),
+    ),
+    home: const SpatialScreen(),
     debugShowCheckedModeBanner: false,
   ));
 }
@@ -66,15 +70,13 @@ class _SpatialScreenState extends State<SpatialScreen> {
   String? forecastTime;
   Uint8List? heatmapBytes;
   
-  // Spatial specific data from second code
+  // Spatial specific data
   String? spatialMethod;
 
-  final MapController _mapCtrl = MapController();
+  bool isLoading = false;
 
-  static const latlong.LatLng battaramullaLL =
-      latlong.LatLng(6.901035, 79.926513);
-  static const latlong.LatLng kandyLL =
-      latlong.LatLng(7.292651, 80.635649);
+  static const latlong.LatLng battaramullaLL = latlong.LatLng(6.901035, 79.926513);
+  static const latlong.LatLng kandyLL = latlong.LatLng(7.292651, 80.635649);
 
   List<Marker> markers = [];
 
@@ -85,7 +87,12 @@ class _SpatialScreenState extends State<SpatialScreen> {
   }
 
   Future<void> runForecast() async {
-    final url = Uri.parse("$apiBase/spatial/predict"); // Using the spatial endpoint
+    setState(() {
+      isLoading = true;
+      prediction = null;
+    });
+
+    final url = Uri.parse("$apiBase/spatial/predict");
 
     final body = {
       "station": station,
@@ -95,23 +102,17 @@ class _SpatialScreenState extends State<SpatialScreen> {
     };
 
     try {
-      print("Forecast request: $url");
-      print("Forecast body: $body");
       final res = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
       );
-      print("Forecast response status: ${res.statusCode}");
-      print("Forecast response body: ${res.body}");
 
       if (res.statusCode != 200) {
         throw Exception("HTTP ${res.statusCode}: ${res.body}");
       }
 
       final resp = jsonDecode(res.body);
-
-      // Decoding spatial data
       final spatialInterpolation = resp["spatial_interpolation"];
       final b64 = resp["heatmap_png_base64"] as String?;
       final bytes = b64 != null ? base64Decode(b64) : null;
@@ -128,190 +129,364 @@ class _SpatialScreenState extends State<SpatialScreen> {
         markers = [
           Marker(
             point: battaramullaLL,
-            child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+            child: const Icon(Icons.location_on, color: Colors.redAccent, size: 40),
           ),
           Marker(
             point: kandyLL,
-            child: const Icon(Icons.location_on, color: Colors.blue, size: 40),
+            child: const Icon(Icons.location_on, color: Colors.blueAccent, size: 40),
           ),
         ];
       });
     } catch (e) {
-      print("Forecast request failed: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Request failed: $e")),
+        SnackBar(
+          content: Text("Request failed: $e"),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-
-    final initialOptions = MapOptions(
-      initialCenter: const latlong.LatLng(7.05, 80.20),
-      initialZoom: isMobile ? 7.0 : 8.0,
-    );
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Aerocast - Air Quality Forecast"),
-        backgroundColor: Colors.blue.shade700,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView( // Added to prevent overflow on small screens
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // ------------------------- 
-              // Controls Card
-              // -------------------------
-              Card(
-                elevation: 3,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      DropdownButton<String>(
-                        value: station,
-                        isExpanded: true,
-                        items: const [
-                          DropdownMenuItem(value: "Battaramulla", child: Text("Battaramulla")),
-                          DropdownMenuItem(value: "Kandy", child: Text("Kandy")),
-                        ],
-                        onChanged: (v) => setState(() => station = v!),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButton<String>(
-                        value: target,
-                        isExpanded: true,
-                        items: const ["PM25", "PM10", "NO2", "SO2", "O3", "CO"]
-                            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                            .toList(),
-                        onChanged: (v) => setState(() => target = v!),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: dtCtrl,
-                        decoration: const InputDecoration(
-                          labelText: "Date & Time (YYYY-MM-DD HH:MM:SS)",
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: runForecast,
-                        icon: const Icon(Icons.analytics),
-                        label: const Text("Generate Prediction"),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 45),
-                        ),
-                      ),
-                    ],
+      backgroundColor: Colors.grey.shade50,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 160.0,
+            floating: false,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: const Text(
+                "Spatial Forecast",
+                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.blue.shade800, Colors.blue.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // ------------------------- 
-              // Results View (Integrated from code 2)
-              // -------------------------
-              if (prediction != null)
-                Card(
-                  color: Colors.green.shade50,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Predicted Value: ${prediction!.toStringAsFixed(2)}",
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        if (spatialMethod != null)
-                          Text("Method: $spatialMethod"),
-                        if (forecastTime != null)
-                          Text("Forecast Time: $forecastTime", style: const TextStyle(color: Colors.grey)),
-                      ],
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      top: -20,
+                      child: Icon(Icons.map_outlined, size: 140, color: Colors.white.withOpacity(0.15)),
                     ),
-                  ),
+                  ],
                 ),
-
-              const SizedBox(height: 16),
-
-              // ------------------------- 
-              // Heatmap and Map Layout
-              // -------------------------
-              SizedBox(
-                height: 400, // Fixed height for the map/heatmap area
-                child: isMobile
-                    ? Column(
-                        children: [
-                          Expanded(child: _buildHeatmapWidget()),
-                          const SizedBox(height: 16),
-                          Expanded(child: _buildMapWidget(initialOptions)),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(child: _buildHeatmapWidget()),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildMapWidget(initialOptions)),
-                        ],
-                      ),
               ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeatmapWidget() {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => HeatmapPage(heatmapBytes: heatmapBytes, target: target))),
-      child: Card(
-        child: Column(
-          children: [
-            const ListTile(leading: Icon(Icons.map), title: Text("Spatial Heatmap")),
-            Expanded(
-              child: heatmapBytes == null
-                  ? const Center(child: Text("No Data Generated"))
-                  : Image.memory(heatmapBytes!, fit: BoxFit.contain),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMapWidget(MapOptions options) {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MapPage(markers: markers, target: target, datetimeStr: dtCtrl.text))),
-      child: Card(
-        child: Column(
-          children: [
-            const ListTile(leading: Icon(Icons.location_on), title: Text("Interactive Map")),
-            Expanded(
-              child: FlutterMap(
-                mapController: _mapCtrl,
-                options: options,
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'lk.edu.aerocast.project.v1',
-                    tileProvider: UserAgentTileProvider(), // Custom provider with proper HTTP headers
-                  ),
-                  // Alternative: Use CartoDB if OSM blocks access
-                  // urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                  // subdomains: const ['a', 'b', 'c', 'd'],
-                  MarkerLayer(markers: markers),
+                  _buildInputsCard(),
+                  const SizedBox(height: 24),
+                  if (isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (prediction != null) ...[
+                    _buildPredictionCard(),
+                    const SizedBox(height: 24),
+                    const Text(
+                      "Visualizations",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButtons(context),
+                  ],
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Configuration",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+          ),
+          const SizedBox(height: 16),
+          _buildDropdownField(
+            label: "Station",
+            icon: Icons.location_city,
+            value: station,
+            items: const ["Battaramulla", "Kandy"],
+            onChanged: (v) => setState(() => station = v!),
+          ),
+          const SizedBox(height: 16),
+          _buildDropdownField(
+            label: "Pollutant Target",
+            icon: Icons.cloud_outlined,
+            value: target,
+            items: const ["PM25", "PM10", "NO2", "SO2", "O3", "CO"],
+            onChanged: (v) => setState(() => target = v!),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: dtCtrl,
+            decoration: InputDecoration(
+              labelText: "Date & Time",
+              hintText: "YYYY-MM-DD HH:MM:SS",
+              prefixIcon: const Icon(Icons.calendar_today_outlined, color: Colors.blueAccent),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              filled: true,
+              fillColor: Colors.grey.shade50,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: FilledButton.icon(
+              onPressed: isLoading ? null : runForecast,
+              icon: const Icon(Icons.analytics_outlined),
+              label: const Text("Generate Prediction", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              style: FilledButton.styleFrom(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: Colors.blue.shade700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required IconData icon,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.blueAccent),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        filled: true,
+        fillColor: Colors.grey.shade50,
+      ),
+      items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _buildPredictionCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade400, Colors.teal.shade700],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.teal.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
+              const SizedBox(width: 8),
+              Text(
+                "Prediction Ready",
+                style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.9)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            prediction!.toStringAsFixed(2),
+            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          const Text(
+            "Predicted Value",
+            style: TextStyle(fontSize: 14, color: Colors.white70),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (spatialMethod != null)
+                  Text("Method: $spatialMethod", style: const TextStyle(color: Colors.white)),
+                if (forecastTime != null)
+                  Text("Time: $forecastTime", style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    
+    Widget heatmapButton = _ActionCard(
+      title: "View Spatial Heatmap",
+      subtitle: "High-resolution 2D pollutant distribution",
+      icon: Icons.grid_on_rounded,
+      color: Colors.deepPurpleAccent,
+      onTap: () {
+        if (heatmapBytes != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => HeatmapPage(heatmapBytes: heatmapBytes, target: target)));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No heatmap data available")));
+        }
+      },
+    );
+
+    Widget interactiveMapButton = _ActionCard(
+      title: "Explore Interactive Map",
+      subtitle: "Pinch, zoom, and tap locations for exact values",
+      icon: Icons.map_rounded,
+      color: Colors.orangeAccent,
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => MapPage(markers: markers, target: target, datetimeStr: dtCtrl.text)));
+      },
+    );
+
+    if (isMobile) {
+      return Column(
+        children: [
+          heatmapButton,
+          const SizedBox(height: 12),
+          interactiveMapButton,
+        ],
+      );
+    } else {
+      return Row(
+        children: [
+          Expanded(child: heatmapButton),
+          const SizedBox(width: 16),
+          Expanded(child: interactiveMapButton),
+        ],
+      );
+    }
+  }
+}
+
+class _ActionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
+                  const SizedBox(height: 4),
+                  Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey.shade400),
           ],
         ),
       ),
@@ -325,15 +500,35 @@ class _SpatialScreenState extends State<SpatialScreen> {
 class HeatmapPage extends StatelessWidget {
   final Uint8List? heatmapBytes;
   final String target;
+  
   const HeatmapPage({super.key, this.heatmapBytes, required this.target});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Heatmap - $target")),
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text("Heatmap - $target", style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
+      ),
       body: heatmapBytes == null 
-          ? const Center(child: Text("No heatmap data")) 
-          : InteractiveViewer(child: Center(child: Image.memory(heatmapBytes!))),
+          ? const Center(child: Text("No heatmap data generated.", style: TextStyle(color: Colors.white54))) 
+          : Center(
+              child: InteractiveViewer(
+                panEnabled: true,
+                minScale: 1.0,
+                maxScale: 4.0,
+                child: Hero(
+                  tag: 'heatmap_image',
+                  child: Image.memory(
+                    heatmapBytes!,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
@@ -345,6 +540,7 @@ class MapPage extends StatefulWidget {
   final List<Marker> markers;
   final String target;
   final String datetimeStr;
+  
   const MapPage({super.key, required this.markers, required this.target, required this.datetimeStr});
 
   @override
@@ -357,6 +553,7 @@ class _MapPageState extends State<MapPage> {
   String? hoverMethod;
   double? hoverDistanceKm;
   bool isHoverLoading = false;
+  
   final MapController _mapCtrl = MapController();
   Offset? hoverScreenPosition;
 
@@ -367,7 +564,7 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _getHoverValue(TapPosition tapPosition, latlong.LatLng point) async {
-    if (isHoverLoading) return; // Prevent multiple simultaneous requests
+    if (isHoverLoading) return;
 
     setState(() {
       isHoverLoading = true;
@@ -380,11 +577,7 @@ class _MapPageState extends State<MapPage> {
 
     final url = Uri.parse("$apiBase/spatial/hover_value?lat=${point.latitude}&lon=${point.longitude}&target=${widget.target}&datetime_str=${Uri.encodeComponent(widget.datetimeStr)}");
     try {
-      print("Hover request: $url");
       final res = await http.get(url);
-      print("Hover response status: ${res.statusCode}");
-      print("Hover response body: ${res.body}");
-
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         setState(() {
@@ -398,27 +591,39 @@ class _MapPageState extends State<MapPage> {
           }
         });
       } else {
-        print("Hover API error: ${res.statusCode} - ${res.body}");
-        setState(() {
-          hoverMethod = "error";
-        });
+        setState(() { hoverMethod = "error"; });
       }
     } catch (e) {
-      print("Hover request failed: $e");
-      setState(() {
-        hoverMethod = "error";
-      });
+      setState(() { hoverMethod = "error"; });
     } finally {
-      setState(() {
-        isHoverLoading = false;
-      });
+      if (mounted) setState(() { isHoverLoading = false; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Map - ${widget.target}")),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)
+            ],
+          ),
+          child: Text(
+            "Interactive Map - ${widget.target}",
+            style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        centerTitle: true,
+      ),
       body: Stack(
         children: [
           FlutterMap(
@@ -432,89 +637,117 @@ class _MapPageState extends State<MapPage> {
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'lk.edu.aerocast.project.v1',
-                tileProvider: UserAgentTileProvider(), // Custom provider with proper HTTP headers
+                tileProvider: UserAgentTileProvider(),
               ),
-              // Alternative: Use CartoDB if OSM blocks access
-              // urlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-              // subdomains: const ['a', 'b', 'c', 'd'],
               MarkerLayer(markers: widget.markers),
             ],
           ),
           if (hoverLatLng != null && hoverScreenPosition != null)
-            Positioned(
-              left: (hoverScreenPosition!.dx + 20 > MediaQuery.of(context).size.width - 200)
-                  ? hoverScreenPosition!.dx - 220  // Position to the left if too close to right edge
-                  : hoverScreenPosition!.dx + 20,   // Default: 20px to the right
-              top: (hoverScreenPosition!.dy + 20 > MediaQuery.of(context).size.height - 150)
-                  ? hoverScreenPosition!.dy - 170  // Position above if too close to bottom
-                  : hoverScreenPosition!.dy + 20,   // Default: 20px below
-              child: Card(
-                color: Colors.white.withOpacity(0.95),
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
+            _buildHoverCard(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHoverCard(BuildContext context) {
+    // Dynamic positioning
+    double leftPos = hoverScreenPosition!.dx + 20;
+    double topPos = hoverScreenPosition!.dy + 20;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    if (leftPos + 220 > screenWidth) leftPos = hoverScreenPosition!.dx - 240;
+    if (topPos + 150 > screenHeight) topPos = hoverScreenPosition!.dy - 160;
+
+    return Positioned(
+      left: leftPos,
+      top: topPos,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 220,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.4)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, spreadRadius: -5)
+              ]
+            ),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16, color: Colors.blueAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      "${hoverLatLng!.latitude.toStringAsFixed(3)}, ${hoverLatLng!.longitude.toStringAsFixed(3)}",
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade700),
+                    ),
+                  ],
+                ),
+                const Divider(),
+                if (isHoverLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 12),
+                        Text("Calculating...", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  )
+                else if (hoverMethod == "ensemble" && hoverValue != null)
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        "${hoverLatLng!.latitude.toStringAsFixed(4)}, ${hoverLatLng!.longitude.toStringAsFixed(4)}",
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            hoverValue!.toStringAsFixed(1),
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(widget.target, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                        ],
                       ),
                       const SizedBox(height: 4),
-                      if (isHoverLoading)
-                        const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 12, height: 12,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            SizedBox(width: 8),
-                            Text("Loading...", style: TextStyle(fontSize: 14)),
-                          ],
-                        )
-                      else if (hoverMethod == "ensemble" && hoverValue != null)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              "${widget.target}: ${hoverValue!.toStringAsFixed(2)}",
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "Method: $hoverMethod",
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        )
-                      else if (hoverMethod == "out_of_range")
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "Out of Range",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red),
-                            ),
-                            Text(
-                              "Distance: ${hoverDistanceKm?.toStringAsFixed(1)} km",
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
-                            ),
-                          ],
-                        )
-                      else
-                        const Text(
-                          "Error loading value",
-                          style: TextStyle(fontSize: 14, color: Colors.red),
-                        ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                        child: Text("Method: $hoverMethod", style: TextStyle(fontSize: 10, color: Colors.blue.shade700)),
+                      ),
                     ],
-                  ),
-                ),
-              ),
+                  )
+                else if (hoverMethod == "out_of_range")
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.deepOrange, size: 18),
+                          SizedBox(width: 6),
+                          Text("Out of Range", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.deepOrange)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text("Dist: ${hoverDistanceKm?.toStringAsFixed(1)} km", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                    ],
+                  )
+                else
+                  const Text("Error fetching data", style: TextStyle(fontSize: 14, color: Colors.redAccent)),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
