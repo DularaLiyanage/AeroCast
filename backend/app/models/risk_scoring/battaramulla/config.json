@@ -1,0 +1,88 @@
+{
+    "features": [
+        "comp_daily",
+        "comp_weekly",
+        "comp_monsoon",
+        "comp_residual",
+        "AT",
+        "BP",
+        "RH",
+        "Solar Rad",
+        "Spd_100m_mps",
+        "Dir_100m_deg",
+        "Prs_0m_hPa",
+        "PM2.5 Conc_lag1",
+        "PM10 Conc_lag24",
+        "SO2 Conc_lag24",
+        "O3 Conc_lag1",
+        "NO2 Conc_lag1",
+        "TrafficRiskScore",
+        "TrafficRiskScore_roll_mean_24h",
+        "IsHoliday",
+        "IsWeekend",
+        "is_peak_hour",
+        "india_transport_intensity_roll_mean_24h",
+        "transboundary_risk_index",
+        "transboundary_risk_index_roll_mean_24h",
+        "hour_sin",
+        "hour_cos"
+    ],
+    "q_hat_90": [
+        3.3375160217285154,
+        3.8304634094238277,
+        4.214742279052734,
+        4.704519653320311,
+        5.321826171874999,
+        5.91092071533203,
+        6.639534759521484,
+        7.32525939941406,
+        7.9347694396972654,
+        8.476175308227537,
+        9.030828475952148,
+        9.413060760498047,
+        9.876670837402344,
+        10.191316604614256,
+        10.525891113281249,
+        10.82759552001953,
+        11.25572624206543,
+        11.475181961059569,
+        11.814279174804687,
+        12.322308349609365,
+        12.686355209350584,
+        12.94209518432617,
+        13.481294250488281,
+        13.872718811035156
+    ],
+    "cea_categories": {
+        "Good": {
+            "min": 0,
+            "max": 50,
+            "color": "green"
+        },
+        "Moderate": {
+            "min": 50,
+            "max": 100,
+            "color": "yellow"
+        },
+        "Unhealthy_Sensitive": {
+            "min": 100,
+            "max": 150,
+            "color": "orange"
+        },
+        "Unhealthy": {
+            "min": 150,
+            "max": 200,
+            "color": "red"
+        },
+        "Very_Unhealthy": {
+            "min": 200,
+            "max": 300,
+            "color": "purple"
+        },
+        "Hazardous": {
+            "min": 300,
+            "max": 500,
+            "color": "maroon"
+        }
+    }
+}
