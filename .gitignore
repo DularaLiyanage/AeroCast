@@ -42,6 +42,11 @@ doc/api/
 *.hdr
 *.tfw
 
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
 # Specific cache file
 cache.pkl
 
