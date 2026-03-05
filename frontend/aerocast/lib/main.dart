@@ -12,7 +12,6 @@ void main() {
   runApp(const AeroCastApp());
 }
 
-// class
 class AeroCastApp extends StatelessWidget {
   const AeroCastApp({super.key});
 
