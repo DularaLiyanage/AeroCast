@@ -10,7 +10,7 @@ from .waqi_service import WAQIService
 
 router = APIRouter()
 
-# Config - Make sure the 'forecast' folder exists in your root
+# Config - Make sure the 'forecast' folder exists in your root Directory and contains the trained models and scalers for both locations.
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Go up 2 levels to reach the 'app' folder
