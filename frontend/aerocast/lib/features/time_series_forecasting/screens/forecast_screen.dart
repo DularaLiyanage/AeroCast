@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart'; // Import this for DateFormat
+import 'package:intl/intl.dart';
 
-// Imports
 import '../data/forecast_service.dart';
 import '../utils/forecast_utils.dart';
 import '../widgets/forecast_chart.dart';
