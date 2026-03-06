@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 // Import component screens
@@ -7,6 +9,7 @@ import 'features/spatial_interpolation/spatial_interpolation.dart';
 import 'features/anomaly_detection/anomaly_detection.dart';
 import 'features/risk_scoring/providers/aqi_provider.dart';
 import 'features/risk_scoring/screens/landing_screen.dart';
+import 'features/risk_scoring/utils/constants.dart';
 
 void main() {
   runApp(const AeroCastApp());
@@ -90,235 +93,171 @@ class _SplashScreenState extends State<SplashScreen> {
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required Widget screen,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [color.withOpacity(0.9), color.withOpacity(0.6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              Text(
+                'AeroCast',
+                style: GoogleFonts.poppins(
+                  fontSize: 44,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryText,
+                  height: 1.1,
+                ),
+              ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3, end: 0),
+              
+              const SizedBox(height: 12),
+              Text(
+                'Select a module to explore real-time air quality data.',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: AppColors.secondaryText,
+                ),
+              ).animate().fadeIn(delay: 200.ms).slideX(),
+              
+              const SizedBox(height: 40),
+              
+              Expanded(
+                child: ListView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    _buildFeatureCard(
+                      context,
+                      title: 'Time Series Forecasting',
+                      subtitle: '24h Pollutant Predictions',
+                      startColor: const Color(0xFF3B82F6),
+                      endColor: const Color(0xFF60A5FA),
+                      icon: Icons.show_chart_rounded,
+                      targetScreen: const ForecastScreen(),
+                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
+                    
+                    const SizedBox(height: 20),
+                    
+                    _buildFeatureCard(
+                      context,
+                      title: 'Spatial Interpolation',
+                      subtitle: 'High-Resolution Maps',
+                      startColor: const Color(0xFF8B5CF6),
+                      endColor: const Color(0xFFA78BFA),
+                      icon: Icons.map_rounded,
+                      targetScreen: const SpatialScreen(),
+                    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
+
+                    const SizedBox(height: 20),
+                    
+                    _buildFeatureCard(
+                      context,
+                      title: 'AQI Risk Scoring',
+                      subtitle: 'Health & Risk Intelligence',
+                      startColor: AppColors.battaramullaStart,
+                      endColor: AppColors.battaramullaEnd,
+                      icon: Icons.health_and_safety_rounded,
+                      targetScreen: const LandingScreen(), // Navigates to the Risk Scoring Landing Screen
+                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
+
+                    const SizedBox(height: 20),
+                    
+                    _buildFeatureCard(
+                      context,
+                      title: 'Anomaly Detection',
+                      subtitle: 'Identify Pollution Events',
+                      startColor: const Color(0xFFF59E0B),
+                      endColor: const Color(0xFFFBBF24),
+                      icon: Icons.warning_amber_rounded,
+                      targetScreen: const AnomalyScreen(),
+                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2, end: 0),
+
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
-              child: Icon(icon, color: Colors.white),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios_rounded,
-                size: 18, color: Colors.grey),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          "AeroCast",
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
-        centerTitle: true,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
+  Widget _buildFeatureCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required Color startColor,
+    required Color endColor,
+    required IconData icon,
+    required Widget targetScreen,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => targetScreen),
+        );
+      },
+      child: Container(
+        height: 160,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppStyles.cardRadius),
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E293B),
-            ],
+            colors: [startColor, endColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: startColor.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            )
+          ],
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(
-                        Icons.air_rounded,
-                        color: Colors.lightBlueAccent,
-                        size: 26,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            "Welcome to AeroCast",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            "Advanced air quality intelligence for your city.",
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.06),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.08),
-                    ),
-                  ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.info_outline_rounded,
-                          color: Colors.lightBlueAccent, size: 20),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          "Explore forecasts, spatial maps, AQI risk, and anomaly insights from one place.",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            height: 1.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  "Modules",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildFeatureCard(
-                  context,
-                  title: "Time Series Forecasting",
-                  subtitle: "24h pollutant predictions with explainability.",
-                  icon: Icons.show_chart_rounded,
-                  color: const Color(0xFF38BDF8),
-                  screen: const ForecastScreen(),
-                ),
-                const SizedBox(height: 14),
-                _buildFeatureCard(
-                  context,
-                  title: "Spatial Interpolation",
-                  subtitle: "High-resolution air quality maps.",
-                  icon: Icons.map_rounded,
-                  color: const Color(0xFFA855F7),
-                  screen: const SpatialScreen(),
-                ),
-                const SizedBox(height: 14),
-                _buildFeatureCard(
-                  context,
-                  title: "AQI Risk Scoring",
-                  subtitle: "Health-centric risk and guidance.",
-                  icon: Icons.health_and_safety_rounded,
-                  color: const Color(0xFF22C55E),
-                  screen: const LandingScreen(),
-                ),
-                const SizedBox(height: 14),
-                _buildFeatureCard(
-                  context,
-                  title: "Anomaly Detection",
-                  subtitle: "Detect unusual pollution events.",
-                  icon: Icons.warning_amber_rounded,
-                  color: const Color(0xFFF97316),
-                  screen: const AnomalyScreen(),
-                ),
-                const SizedBox(height: 24),
-                Center(
-                  child: Text(
-                    "Powered by AeroCast",
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
+        child: Stack(
+          children: [
+            Positioned(
+              right: -10,
+              bottom: -10,
+              child: Icon(
+                icon,
+                size: 130,
+                color: Colors.white.withOpacity(0.15),
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                   Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      height: 1.1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
