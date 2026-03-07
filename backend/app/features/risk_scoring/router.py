@@ -195,7 +195,6 @@ async def predict_24h(request: PredictionRequest):
         # 7. Risk Level, Reasoning & Alert
         risk_level, risk_color = get_risk_info(aqi_pred, assets["config"])
         reasoning = utils.generate_reasoning(input_df_features, assets["top_drivers"], aqi_pred, risk_level)
-        reasoning = utils.generate_reasoning(input_df_features, assets["top_drivers"], aqi_pred, risk_level)
         health_alert = None # Will populate based on next hour
         
         # 8. Future Forecast (Next 24h)
@@ -314,6 +313,8 @@ async def predict_24h(request: PredictionRequest):
             "hourly_forecast": hourly_forecast
         }
         
+    except ConnectionError as e:
+        raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         import traceback
         traceback.print_exc()
