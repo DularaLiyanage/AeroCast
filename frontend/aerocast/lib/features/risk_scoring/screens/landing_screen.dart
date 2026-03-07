@@ -27,7 +27,6 @@ class LandingScreen extends StatelessWidget {
                   height: 1.1,
                 ),
               ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3, end: 0),
-              
               const SizedBox(height: 12),
               Text(
                 'Check the air quality forecast for your city.',
@@ -36,9 +35,7 @@ class LandingScreen extends StatelessWidget {
                   color: AppColors.secondaryText,
                 ),
               ).animate().fadeIn(delay: 200.ms).slideX(),
-              
               const SizedBox(height: 60),
-              
               Expanded(
                 child: ListView(
                   children: [
@@ -49,10 +46,11 @@ class LandingScreen extends StatelessWidget {
                       AppColors.battaramullaStart,
                       AppColors.battaramullaEnd,
                       Icons.park_outlined,
-                    ).animate().fadeIn(delay: 400.ms).scale(curve: Curves.easeOutBack),
-                    
+                    )
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .scale(curve: Curves.easeOutBack),
                     const SizedBox(height: 24),
-                    
                     _buildLocationCard(
                       context,
                       'Kandy',
@@ -60,7 +58,10 @@ class LandingScreen extends StatelessWidget {
                       AppColors.kandyStart,
                       AppColors.kandyEnd,
                       Icons.landscape_outlined,
-                    ).animate().fadeIn(delay: 600.ms).scale(curve: Curves.easeOutBack),
+                    )
+                        .animate()
+                        .fadeIn(delay: 600.ms)
+                        .scale(curve: Curves.easeOutBack),
                   ],
                 ),
               ),
@@ -71,19 +72,14 @@ class LandingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLocationCard(
-    BuildContext context, 
-    String city, 
-    String subtitle, 
-    Color startColor, 
-    Color endColor, 
-    IconData icon
-  ) {
+  Widget _buildLocationCard(BuildContext context, String city, String subtitle,
+      Color startColor, Color endColor, IconData icon) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => DashboardScreen(location: city)),
+          MaterialPageRoute(
+              builder: (_) => DashboardScreen(initialLocation: city)),
         );
       },
       child: Container(
@@ -120,7 +116,7 @@ class LandingScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                   Text(
+                  Text(
                     subtitle,
                     style: GoogleFonts.poppins(
                       color: Colors.white70,
