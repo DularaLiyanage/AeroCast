@@ -49,7 +49,7 @@ cache.pkl
 data/
 
 # Ignore models folder (if you store trained models)
-models/
+/models/
 
 # Ignore common ML model formats
 *.pt
