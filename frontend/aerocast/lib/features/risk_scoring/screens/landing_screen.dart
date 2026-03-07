@@ -10,7 +10,7 @@ class LandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
@@ -43,8 +43,8 @@ class LandingScreen extends StatelessWidget {
                       context,
                       'Battaramulla',
                       'Urban Greenery',
-                      AppColors.battaramullaStart,
-                      AppColors.battaramullaEnd,
+                      AppColors.primaryBlue,
+                      AppColors.darkBlue,
                       Icons.park_outlined,
                     )
                         .animate()
@@ -55,8 +55,8 @@ class LandingScreen extends StatelessWidget {
                       context,
                       'Kandy',
                       'Hill Capital',
-                      AppColors.kandyStart,
-                      AppColors.kandyEnd,
+                      AppColors.lightBlue,
+                      AppColors.primaryBlue,
                       Icons.landscape_outlined,
                     )
                         .animate()
@@ -141,3 +141,4 @@ class LandingScreen extends StatelessWidget {
     );
   }
 }
+

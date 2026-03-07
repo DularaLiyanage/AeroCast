@@ -6,6 +6,8 @@ import 'models/air_quality.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'screens/past_anomalies_screen.dart';
 
+import '../risk_scoring/utils/constants.dart';
+
 class AnomalyScreen extends StatelessWidget {
   const AnomalyScreen({super.key});
 
@@ -50,18 +52,21 @@ class _DashboardMobileState extends State<DashboardMobile> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading data: $e')),
-      );
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading data: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: _isLoading 
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryBlue))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -95,10 +100,10 @@ class _DashboardMobileState extends State<DashboardMobile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Air Quality", style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text("Air Quality", style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryText)),
               const Text(
                 "Predicting future air quality spikes",
-                style: TextStyle(color: Colors.grey, fontSize: 13, letterSpacing: 0.2),
+                style: TextStyle(color: AppColors.secondaryText, fontSize: 13, letterSpacing: 0.2),
               ),
             ],
           ),
@@ -106,14 +111,14 @@ class _DashboardMobileState extends State<DashboardMobile> {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, color: AppColors.primaryBlue),
               onPressed: _initApp,
-              style: IconButton.styleFrom(backgroundColor: Colors.white, elevation: 2),
+              style: IconButton.styleFrom(backgroundColor: AppColors.cardGray, elevation: 2),
             ),
             IconButton(
-              icon: const Icon(Icons.history_rounded),
+              icon: const Icon(Icons.history_rounded, color: AppColors.primaryBlue),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (c) => const PastAnomaliesScreen())),
-              style: IconButton.styleFrom(backgroundColor: Colors.white, elevation: 2),
+              style: IconButton.styleFrom(backgroundColor: AppColors.cardGray, elevation: 2),
             ),
           ],
         )
@@ -136,12 +141,12 @@ class _DashboardMobileState extends State<DashboardMobile> {
     return Expanded(
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isSelected ? Colors.blue : Colors.white,
-          foregroundColor: isSelected ? Colors.white : Colors.black87,
+          backgroundColor: isSelected ? AppColors.primaryBlue : AppColors.cardGray,
+          foregroundColor: isSelected ? Colors.white : AppColors.primaryText,
           elevation: isSelected ? 4 : 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: isSelected ? Colors.blue : Colors.grey.shade200),
+            side: BorderSide(color: isSelected ? AppColors.primaryBlue : Colors.grey.shade300),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
         ),
@@ -174,16 +179,16 @@ class _DashboardMobileState extends State<DashboardMobile> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFF2D3142) : Colors.white,
+                  color: isSelected ? AppColors.darkBlue : AppColors.cardGray,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isSelected ? const Color(0xFF2D3142) : Colors.grey.shade200),
-                  boxShadow: isSelected ? [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, 2))] : [],
+                  border: Border.all(color: isSelected ? AppColors.darkBlue : Colors.grey.shade300),
+                  boxShadow: isSelected ? [AppStyles.softShadow] : [],
                 ),
                 child: Center(
                   child: Text(
                     p,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black54,
+                      color: isSelected ? Colors.white : AppColors.secondaryText,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -201,7 +206,7 @@ class _DashboardMobileState extends State<DashboardMobile> {
     double threshold = _currentData?.thresholds[selectedPollutant] ?? 1.5;
     
     bool isAnomalous = value > threshold;
-    Color boxColor = isAnomalous ? Colors.red.shade400 : const Color(0xFF4CAF50);
+    Color boxColor = isAnomalous ? Colors.red.shade400 : Colors.green.shade500;
 
     return Container(
       width: double.infinity,
@@ -209,6 +214,7 @@ class _DashboardMobileState extends State<DashboardMobile> {
       decoration: BoxDecoration(
         color: boxColor,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [AppStyles.coloredShadow(boxColor)],
       ),
       child: Column(
         children: [
@@ -283,9 +289,9 @@ class _DashboardMobileState extends State<DashboardMobile> {
   Widget _buildActionButtons() {
     return Row(
       children: [
-        _buildActionButton(Icons.grid_view_rounded, "Dashboard", Colors.blue, () {}),
+        _buildActionButton(Icons.grid_view_rounded, "Dashboard", AppColors.primaryBlue, () {}),
         const SizedBox(width: 16),
-        _buildActionButton(Icons.security_rounded, "Safety Tips", Colors.green, _showSafetyTips),
+        _buildActionButton(Icons.security_rounded, "Safety Tips", Colors.green.shade500, _showSafetyTips),
       ],
     );
   }
@@ -299,6 +305,7 @@ class _DashboardMobileState extends State<DashboardMobile> {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(16),
+            boxShadow: [AppStyles.coloredShadow(color)],
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -368,16 +375,16 @@ class _DashboardMobileState extends State<DashboardMobile> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardGray,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+          AppStyles.softShadow,
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("$selectedPollutant Weighted Forecast", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3142))),
+          Text("$selectedPollutant Weighted Forecast", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryText)),
           const SizedBox(height: 20),
           SizedBox(
             height: 220,
@@ -409,8 +416,8 @@ class _DashboardMobileState extends State<DashboardMobile> {
                               space: 10,
                               child: Text(
                                 days[index], 
-                                style: TextStyle(
-                                  color: Colors.grey.shade600, 
+                                style: const TextStyle(
+                                  color: AppColors.secondaryText, 
                                   fontSize: 10, // Slightly smaller to ensure fit
                                   fontWeight: FontWeight.w500
                                 )
@@ -431,7 +438,7 @@ class _DashboardMobileState extends State<DashboardMobile> {
                     enabled: true,
                     handleBuiltInTouches: true,
                     touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: const Color(0xFF1B1B1B), // Deeper dark for premium look
+                      tooltipBgColor: AppColors.primaryText, // Deeper dark for premium look
                       tooltipPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       tooltipRoundedRadius: 10,
                       getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
@@ -454,7 +461,7 @@ class _DashboardMobileState extends State<DashboardMobile> {
                               TextSpan(
                                 text: "\u25A0 ",
                                 style: TextStyle(
-                                  color: isAnomaly ? const Color(0xFFFF4D4D) : const Color(0xFF4A90E2), 
+                                  color: isAnomaly ? const Color(0xFFFF4D4D) : AppColors.primaryBlue, 
                                   fontSize: 18
                                 ),
                               ),
@@ -492,14 +499,14 @@ class _DashboardMobileState extends State<DashboardMobile> {
                       spots: spots,
                       isCurved: true,
                       curveSmoothness: 0.35,
-                      color: const Color(0xFF4A90E2),
+                      color: AppColors.primaryBlue,
                       barWidth: 3,
                       isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
                           radius: 6,
-                          color: spot.y > threshold ? const Color(0xFFFF5252) : const Color(0xFF4A90E2),
+                          color: spot.y > threshold ? const Color(0xFFFF5252) : AppColors.primaryBlue,
                           strokeWidth: 3,
                           strokeColor: Colors.white,
                         ),
@@ -508,8 +515,8 @@ class _DashboardMobileState extends State<DashboardMobile> {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            const Color(0xFF4A90E2).withOpacity(0.2),
-                            const Color(0xFF4A90E2).withOpacity(0.0),
+                            AppColors.primaryBlue.withOpacity(0.2),
+                            AppColors.primaryBlue.withOpacity(0.0),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
