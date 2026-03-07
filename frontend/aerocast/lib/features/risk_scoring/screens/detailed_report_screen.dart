@@ -43,17 +43,13 @@ class DetailedReportScreen extends StatelessWidget {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.cardGray,
               borderRadius: BorderRadius.circular(16),
               border: isCurrent
                   ? Border.all(color: AppColors.getColor(p.colour), width: 2)
                   : Border.all(color: Colors.grey.withOpacity(0.1)),
               boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
+                AppStyles.softShadow,
               ],
             ),
             child: Column(
@@ -77,7 +73,7 @@ class DetailedReportScreen extends StatelessWidget {
                           p.date,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: AppColors.secondaryText,
                           ),
                         ),
                       ],
@@ -126,7 +122,7 @@ class DetailedReportScreen extends StatelessWidget {
                     p.reasoning,
                     style: GoogleFonts.poppins(
                       fontSize: 13,
-                      color: Colors.grey[700],
+                      color: AppColors.secondaryText,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -146,7 +142,7 @@ class DetailedReportScreen extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: GoogleFonts.poppins(
-              fontSize: 10, color: Colors.grey, fontWeight: FontWeight.w600),
+              fontSize: 10, color: AppColors.secondaryText, fontWeight: FontWeight.w600),
         ),
         Text(
           value,
@@ -159,3 +155,4 @@ class DetailedReportScreen extends StatelessWidget {
     );
   }
 }
+

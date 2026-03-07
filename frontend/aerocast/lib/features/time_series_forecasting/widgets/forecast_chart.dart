@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../risk_scoring/utils/constants.dart';
 
 class ForecastChart extends StatelessWidget {
   final List<dynamic> values;
@@ -32,15 +34,15 @@ class ForecastChart extends StatelessWidget {
       spots: spots,
       isCurved: true,
       preventCurveOverShooting: true,
-      color: Colors.black,
-      barWidth: 2.5,
+      color: AppColors.primaryBlue,
+      barWidth: 3,
       dotData: FlDotData(show: false),
       belowBarData: BarAreaData(
         show: true,
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.black.withOpacity(0.12), Colors.transparent],
+          colors: [AppColors.primaryBlue.withOpacity(0.2), Colors.transparent],
         ),
       ),
     );
@@ -50,7 +52,7 @@ class ForecastChart extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.fromLTRB(10, 20, 20, 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardGray,
         borderRadius: BorderRadius.circular(30),
       ),
       child: Column(
@@ -61,11 +63,11 @@ class ForecastChart extends StatelessWidget {
             children: [
               const Padding(
                 padding: EdgeInsets.only(left: 10, bottom: 10),
-                child: Text("24h Trend", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text("24h Trend", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primaryText)),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppColors.primaryBlue, borderRadius: BorderRadius.circular(12)),
                 child: Text(
                    "${values[selectedHourIndex].toStringAsFixed(1)} µg/m³",
                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
@@ -94,8 +96,14 @@ class ForecastChart extends StatelessWidget {
                         DateTime time = _getTomorrowStart().add(Duration(hours: hour));
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(DateFormat('ha').format(time),
-                              style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          child: Text(
+                            DateFormat('ha').format(time),
+                            style: GoogleFonts.poppins(
+                              color: AppColors.primaryText.withOpacity(0.6),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         );
                       },
                     ),
@@ -115,17 +123,17 @@ class ForecastChart extends StatelessWidget {
                   getTouchedSpotIndicator: (barData, spotIndexes) {
                     return spotIndexes.map((index) {
                       return TouchedSpotIndicatorData(
-                        const FlLine(color: Colors.black, strokeWidth: 2, dashArray: [4, 4]),
+                        const FlLine(color: AppColors.primaryBlue, strokeWidth: 2, dashArray: [4, 4]),
                         FlDotData(
                           show: true,
                           getDotPainter: (spot, percent, bar, index) =>
-                              FlDotCirclePainter(radius: 6, color: Colors.black, strokeWidth: 2, strokeColor: Colors.white),
+                              FlDotCirclePainter(radius: 6, color: AppColors.primaryBlue, strokeWidth: 2, strokeColor: Colors.white),
                         ),
                       );
                     }).toList();
                   },
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: Colors.black,
+                    tooltipBgColor: AppColors.primaryText,
                     getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
                       return touchedBarSpots.map((barSpot) {
                         return LineTooltipItem(
@@ -146,7 +154,14 @@ class ForecastChart extends StatelessWidget {
           // SLIDER
           Column(
             children: [
-              const Text("Slide to see specific hour", style: TextStyle(color: Colors.grey, fontSize: 10)),
+              Text(
+                "Slide to see specific hour", 
+                style: GoogleFonts.poppins(
+                  color: AppColors.primaryText.withOpacity(0.5),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               SizedBox(
                 height: 30,
                 child: SliderTheme(
@@ -160,8 +175,8 @@ class ForecastChart extends StatelessWidget {
                     min: 0,
                     max: (values.length - 1).toDouble(),
                     divisions: values.length > 1 ? values.length - 1 : 1,
-                    activeColor: Colors.black,
-                    inactiveColor: Colors.grey[200],
+                    activeColor: AppColors.primaryBlue,
+                    inactiveColor: AppColors.lightBlue.withOpacity(0.3),
                     onChanged: (val) {
                       onHourChanged(val.toInt()); // <--- Notify Parent
                     },
@@ -174,4 +189,4 @@ class ForecastChart extends StatelessWidget {
       ),
     );
   }
-}
+}

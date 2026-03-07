@@ -26,8 +26,28 @@ class AeroCastApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'AeroCast',
         theme: ThemeData(
-          primarySwatch: Colors.blue,
-          scaffoldBackgroundColor: Colors.grey[100],
+          primaryColor: AppColors.primaryBlue,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.primaryBlue,
+            primary: AppColors.primaryBlue,
+            secondary: AppColors.lightBlue,
+            surface: AppColors.cardGray,
+          ),
+          scaffoldBackgroundColor: AppColors.background,
+          textTheme: GoogleFonts.poppinsTextTheme(),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: AppColors.primaryText),
+            titleTextStyle: TextStyle(color: AppColors.primaryText, fontSize: 20, fontWeight: FontWeight.w600),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
         ),
         home: const SplashScreen(),
       ),
@@ -70,15 +90,15 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.air, size: 80, color: Colors.blue),
-            SizedBox(height: 20),
+          children: [
+            const Icon(Icons.air, size: 80, color: AppColors.primaryBlue),
+            const SizedBox(height: 20),
             Text(
               "AeroCast",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.primaryText),
             ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
+            const SizedBox(height: 20),
+            const CircularProgressIndicator(color: AppColors.primaryBlue),
           ],
         ),
       ),
@@ -87,182 +107,105 @@ class _SplashScreenState extends State<SplashScreen> {
 }
 
 ////////////////////////////////////////////////////////
-/// HOME SCREEN WITH 4 COMPONENT BUTTONS
+/// HOME SCREEN WITH BOTTOM NAVIGATION
 ////////////////////////////////////////////////////////
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    const DashboardScreen(), // Default page (Index 0)
+    const ForecastScreen(),
+    const SpatialScreen(),
+    const AnomalyScreen(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 40),
-              Text(
-                'AeroCast',
-                style: GoogleFonts.poppins(
-                  fontSize: 44,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
-                  height: 1.1,
-                ),
-              ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3, end: 0),
-              const SizedBox(height: 12),
-              Text(
-                'Select a module to explore real-time air quality data.',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: AppColors.secondaryText,
-                ),
-              ).animate().fadeIn(delay: 200.ms).slideX(),
-              const SizedBox(height: 40),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  children: [
-                    _buildFeatureCard(
-                      context,
-                      title: 'Time Series Forecasting',
-                      subtitle: '24h Pollutant Predictions',
-                      startColor: const Color(0xFF3B82F6),
-                      endColor: const Color(0xFF60A5FA),
-                      icon: Icons.show_chart_rounded,
-                      targetScreen: const ForecastScreen(),
-                    )
-                        .animate()
-                        .fadeIn(delay: 400.ms)
-                        .slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 20),
-                    _buildFeatureCard(
-                      context,
-                      title: 'Spatial Interpolation',
-                      subtitle: 'High-Resolution Maps',
-                      startColor: const Color(0xFF8B5CF6),
-                      endColor: const Color(0xFFA78BFA),
-                      icon: Icons.map_rounded,
-                      targetScreen: const SpatialScreen(),
-                    )
-                        .animate()
-                        .fadeIn(delay: 500.ms)
-                        .slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 20),
-                    _buildFeatureCard(
-                      context,
-                      title: 'AQI Risk Scoring',
-                      subtitle: 'Health & Risk Intelligence',
-                      startColor: AppColors.battaramullaStart,
-                      endColor: AppColors.battaramullaEnd,
-                      icon: Icons.health_and_safety_rounded,
-                      targetScreen:
-                          const DashboardScreen(), // Navigates to the Risk Scoring Dashboard Screen
-                    )
-                        .animate()
-                        .fadeIn(delay: 600.ms)
-                        .slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 20),
-                    _buildFeatureCard(
-                      context,
-                      title: 'Anomaly Detection',
-                      subtitle: 'Identify Pollution Events',
-                      startColor: const Color(0xFFF59E0B),
-                      endColor: const Color(0xFFFBBF24),
-                      icon: Icons.warning_amber_rounded,
-                      targetScreen: const AnomalyScreen(),
-                    )
-                        .animate()
-                        .fadeIn(delay: 700.ms)
-                        .slideY(begin: 0.2, end: 0),
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              ),
+      backgroundColor: AppColors.background,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          backgroundColor: Colors.white,
+          indicatorColor: AppColors.primaryBlue.withOpacity(0.15),
+          labelTextStyle: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primaryBlue);
+            }
+            return GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.secondaryText);
+          }),
+          iconTheme: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return const IconThemeData(
+                  color: AppColors.primaryBlue, size: 26);
+            }
+            return const IconThemeData(
+                color: AppColors.secondaryText, size: 24);
+          }),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              )
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required Color startColor,
-    required Color endColor,
-    required IconData icon,
-    required Widget targetScreen,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => targetScreen),
-        );
-      },
-      child: Container(
-        height: 160,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppStyles.cardRadius),
-          gradient: LinearGradient(
-            colors: [startColor, endColor],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          child: NavigationBar(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: (index) {
+              setState(() {
+                _currentIndex = index;
+              });
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.health_and_safety_outlined),
+                selectedIcon: Icon(Icons.health_and_safety_rounded),
+                label: 'Dashboard',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.show_chart_outlined),
+                selectedIcon: Icon(Icons.show_chart_rounded),
+                label: 'Forecast',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.map_outlined),
+                selectedIcon: Icon(Icons.map_rounded),
+                label: 'Map',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.warning_amber_outlined),
+                selectedIcon: Icon(Icons.warning_amber_rounded),
+                label: 'Anomalies',
+              ),
+            ],
+            animationDuration: const Duration(milliseconds: 300),
+            surfaceTintColor: Colors.transparent,
+            height: 70,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: startColor.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            )
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: -10,
-              bottom: -10,
-              child: Icon(
-                icon,
-                size: 130,
-                color: Colors.white.withOpacity(0.15),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    subtitle,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    title,
-                    style: GoogleFonts.poppins(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 }
+
