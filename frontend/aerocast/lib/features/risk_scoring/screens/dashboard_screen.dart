@@ -9,23 +9,33 @@ import '../widgets/aqi_chart.dart';
 import '../widgets/custom_card.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final String location;
+  final String? initialLocation;
 
-  const DashboardScreen({super.key, required this.location});
+  const DashboardScreen({super.key, this.initialLocation});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  late String _currentLocation;
+
   @override
   void initState() {
     super.initState();
+    _currentLocation = widget.initialLocation ?? 'Battaramulla';
     // Fetch data after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AqiProvider>(context, listen: false)
-          .loadPredictions(widget.location);
+          .loadPredictions(_currentLocation);
     });
+  }
+
+  void _switchLocation(String location) {
+    setState(() {
+      _currentLocation = location;
+    });
+    Provider.of<AqiProvider>(context, listen: false).loadPredictions(location);
   }
 
   @override
@@ -33,12 +43,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.location,
+        title: Text('Air Quality Risk',
             style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.primaryText,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildLocationButton('Battaramulla'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildLocationButton('Kandy'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: Consumer<AqiProvider>(
         builder: (context, provider, child) {
@@ -61,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       textAlign: TextAlign.center),
                   const SizedBox(height: 24),
                   ElevatedButton(
-                    onPressed: () => provider.loadPredictions(widget.location),
+                    onPressed: () => provider.loadPredictions(_currentLocation),
                     child: const Text('Try Again'),
                   )
                 ],
@@ -261,7 +288,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             MaterialPageRoute(
                                 builder: (_) => DetailedReportScreen(
                                     predictions: predictions,
-                                    location: widget.location)));
+                                    location: _currentLocation)));
                       },
                       icon: const Icon(Icons.list_alt),
                       label: const Text("View Detailed Report"),
@@ -287,6 +314,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLocationButton(String location) {
+    final isSelected = _currentLocation == location;
+    return GestureDetector(
+      onTap: () => _switchLocation(location),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color:
+              isSelected ? AppColors.primaryText : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryText
+                : Colors.grey.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Center(
+          child: Text(
+            location,
+            style: GoogleFonts.poppins(
+              color: isSelected ? Colors.white : AppColors.primaryText,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 14,
+            ),
+          ),
+        ),
       ),
     );
   }
