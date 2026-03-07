@@ -15,10 +15,18 @@ from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 import warnings
 warnings.filterwarnings("ignore")
 
-# Config
-model_path= "../../models/time_series_forecasting" 
+# Config - Use absolute paths based on this module's location
+current_file_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.abspath(os.path.join(current_file_dir, "../../"))
+
+model_path = os.path.join(backend_dir, "models", "time_series_forecasting")
+forecast_dir = os.path.join(backend_dir, "forecast", "time_series_forecasting")
+output_file = os.path.join(forecast_dir, "daily_forecast.json")
+
+# Ensure output directory exists
+os.makedirs(forecast_dir, exist_ok=True)
+
 locations = ["kandy", "baththaramulla"]
-output_file = "../../forecast/time_series_forecasting/daily_forecast.json"
 cordinates = {
     "kandy": {"lat": 7.2906, "lon": 80.6337},
     "baththaramulla": {"lat": 6.9271, "lon": 79.8612} 
@@ -238,7 +246,18 @@ def run_batch():
                 original_load = torch.load
                 torch.load = lambda f, map_location=None, weights_only=False, **kwargs: original_load(f, map_location=map_location, weights_only=False, **kwargs)
                 try:
-                    tft = TemporalFusionTransformer.load_from_checkpoint(f"{model_path}/{loc}_tft_model_final.ckpt")
+                    # Fix the monotone_constaints typo before loading
+                    checkpoint_path = f"{model_path}/{loc}_tft_model_final.ckpt"
+                    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+                    
+                    # Fix typo in hyperparameters if it exists
+                    if "hyper_parameters" in checkpoint:
+                        hparams = checkpoint["hyper_parameters"]
+                        if 'monotone_constaints' in hparams:
+                            hparams['monotone_constraints'] = hparams.pop('monotone_constaints')
+                            torch.save(checkpoint, checkpoint_path)  # Save corrected checkpoint
+                    
+                    tft = TemporalFusionTransformer.load_from_checkpoint(checkpoint_path)
                     with open(f"{model_path}/{loc}_training_dataset_params.pkl", "rb") as f:
                         tft_params = joblib.load(f)
                         

@@ -44,6 +44,11 @@ doc/api/
 
 # Specific cache file
 cache.pkl
+cache.sqlite
+cache/
+
+# Lightning training logs
+lightning_logs/
 
 # Ignore entire data folder (downloaded datasets)
 /data/

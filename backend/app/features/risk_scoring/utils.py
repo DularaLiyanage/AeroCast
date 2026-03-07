@@ -3,6 +3,7 @@ import numpy as np
 import requests
 import holidays
 from datetime import datetime, timedelta
+import time
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
 
@@ -25,14 +26,42 @@ REQUIRED_FEATURES = [
     'hour_sin', 'hour_cos'
 ]
 
+OPEN_METEO_TIMEOUT_SECONDS = 12
+OPEN_METEO_CACHE_TTL_SECONDS = 600  # 10 minutes
+
+# In-memory weather cache: key -> (timestamp, dataframe)
+_WEATHER_CACHE = {}
+
+
+def _get_cache(cache_key: str, allow_stale: bool = False):
+    cached = _WEATHER_CACHE.get(cache_key)
+    if not cached:
+        return None
+
+    ts, df = cached
+    if allow_stale or (time.time() - ts) <= OPEN_METEO_CACHE_TTL_SECONDS:
+        return df.copy()
+
+    return None
+
+
+def _set_cache(cache_key: str, df: pd.DataFrame):
+    _WEATHER_CACHE[cache_key] = (time.time(), df.copy())
+
 def get_open_meteo_data(location_name: str):
     """
     Fetches past 24 hours of weather data from Open-Meteo API.
     """
-    if location_name.lower() not in LOCATION_COORDS:
+    location_key = location_name.lower()
+    if location_key not in LOCATION_COORDS:
         raise ValueError(f"Unknown location: {location_name}")
-    
-    coords = LOCATION_COORDS[location_name.lower()]
+
+    cache_key = f"history:{location_key}"
+    cached_df = _get_cache(cache_key)
+    if cached_df is not None:
+        return cached_df
+
+    coords = LOCATION_COORDS[location_key]
     
     # We want the *past* 24 hours. 
     # Open-Meteo 'past_days=1' gives yesterday and today so far.
@@ -50,9 +79,16 @@ def get_open_meteo_data(location_name: str):
         "timezone": "auto"
     }
     
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = requests.get(url, params=params, timeout=OPEN_METEO_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException as e:
+        stale_df = _get_cache(cache_key, allow_stale=True)
+        if stale_df is not None:
+            print(f"Warning: Open-Meteo history fetch failed, using stale cache for {location_key}: {e}")
+            return stale_df
+        raise ConnectionError(f"Open-Meteo history fetch failed for {location_key}: {e}") from e
     
     hourly = data.get("hourly", {})
     df = pd.DataFrame(hourly)
@@ -75,18 +111,25 @@ def get_open_meteo_data(location_name: str):
     # Take the last 24 entries
     if len(df) < 24:
         raise ValueError(f"Insufficient weather data fetched. Got {len(df)} rows, expected >= 24.")
-    
+
     df = df.tail(24).reset_index(drop=True)
+    _set_cache(cache_key, df)
     return df
 
 def get_open_meteo_forecast(location_name: str):
     """
     Fetches NEXT 24 hours of weather forecast.
     """
-    if location_name.lower() not in LOCATION_COORDS:
+    location_key = location_name.lower()
+    if location_key not in LOCATION_COORDS:
         raise ValueError(f"Unknown location: {location_name}")
-    
-    coords = LOCATION_COORDS[location_name.lower()]
+
+    cache_key = f"forecast:{location_key}"
+    cached_df = _get_cache(cache_key)
+    if cached_df is not None:
+        return cached_df
+
+    coords = LOCATION_COORDS[location_key]
     
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
@@ -98,9 +141,16 @@ def get_open_meteo_forecast(location_name: str):
         "timezone": "auto"
     }
     
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = requests.get(url, params=params, timeout=OPEN_METEO_TIMEOUT_SECONDS)
+        response.raise_for_status()
+        data = response.json()
+    except requests.RequestException as e:
+        stale_df = _get_cache(cache_key, allow_stale=True)
+        if stale_df is not None:
+            print(f"Warning: Open-Meteo forecast fetch failed, using stale cache for {location_key}: {e}")
+            return stale_df
+        raise ConnectionError(f"Open-Meteo forecast fetch failed for {location_key}: {e}") from e
     
     hourly = data.get("hourly", {})
     df = pd.DataFrame(hourly)
@@ -119,8 +169,9 @@ def get_open_meteo_forecast(location_name: str):
     
     if len(df) < 24:
          raise ValueError(f"Insufficient forecast data. Got {len(df)} rows.")
-         
+
     df = df.head(24).reset_index(drop=True)
+    _set_cache(cache_key, df)
     return df
 
 def prepare_input(weather_df: pd.DataFrame, hourly_averages: dict):
