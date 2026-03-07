@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/forecast_utils.dart'; // Import utils for labels
+import '../../risk_scoring/utils/constants.dart';
 
 class PollutantSelector extends StatelessWidget { // FIX: Renamed Class
   final Map<String, dynamic>? forecastData;
@@ -31,11 +32,11 @@ class PollutantSelector extends StatelessWidget { // FIX: Renamed Class
               label: Text(ForecastUtils.pollutantLabels[key] ?? key),
               selected: isSelected,
               showCheckmark: false, // Cleaner look
-              selectedColor: Colors.black,
+              selectedColor: AppColors.primaryBlue,
               backgroundColor: Colors.grey[100],
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? Colors.black : Colors.transparent)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? AppColors.primaryBlue : Colors.transparent)),
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black87,
+                color: isSelected ? Colors.white : AppColors.primaryText,
                 fontWeight: FontWeight.w600,
               ),
               // FIX: Call the parent function instead of setState
