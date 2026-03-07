@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 import 'features/time_series_forecasting/time_series_forecasting.dart';
 import 'features/spatial_interpolation/spatial_interpolation.dart';
 import 'features/anomaly_detection/anomaly_detection.dart';
+import 'features/risk_scoring/risk_scoring.dart';
 import 'features/risk_scoring/providers/aqi_provider.dart';
-import 'features/risk_scoring/screens/landing_screen.dart';
 import 'features/risk_scoring/utils/constants.dart';
 
 void main() {
@@ -113,7 +113,6 @@ class HomeScreen extends StatelessWidget {
                   height: 1.1,
                 ),
               ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3, end: 0),
-              
               const SizedBox(height: 12),
               Text(
                 'Select a module to explore real-time air quality data.',
@@ -122,9 +121,7 @@ class HomeScreen extends StatelessWidget {
                   color: AppColors.secondaryText,
                 ),
               ).animate().fadeIn(delay: 200.ms).slideX(),
-              
               const SizedBox(height: 40),
-              
               Expanded(
                 child: ListView(
                   physics: const BouncingScrollPhysics(),
@@ -137,10 +134,11 @@ class HomeScreen extends StatelessWidget {
                       endColor: const Color(0xFF60A5FA),
                       icon: Icons.show_chart_rounded,
                       targetScreen: const ForecastScreen(),
-                    ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
-                    
+                    )
+                        .animate()
+                        .fadeIn(delay: 400.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 20),
-                    
                     _buildFeatureCard(
                       context,
                       title: 'Spatial Interpolation',
@@ -149,10 +147,11 @@ class HomeScreen extends StatelessWidget {
                       endColor: const Color(0xFFA78BFA),
                       icon: Icons.map_rounded,
                       targetScreen: const SpatialScreen(),
-                    ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.2, end: 0),
-
+                    )
+                        .animate()
+                        .fadeIn(delay: 500.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 20),
-                    
                     _buildFeatureCard(
                       context,
                       title: 'AQI Risk Scoring',
@@ -160,11 +159,13 @@ class HomeScreen extends StatelessWidget {
                       startColor: AppColors.battaramullaStart,
                       endColor: AppColors.battaramullaEnd,
                       icon: Icons.health_and_safety_rounded,
-                      targetScreen: const LandingScreen(), // Navigates to the Risk Scoring Landing Screen
-                    ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.2, end: 0),
-
+                      targetScreen:
+                          const DashboardScreen(), // Navigates to the Risk Scoring Dashboard Screen
+                    )
+                        .animate()
+                        .fadeIn(delay: 600.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 20),
-                    
                     _buildFeatureCard(
                       context,
                       title: 'Anomaly Detection',
@@ -173,8 +174,10 @@ class HomeScreen extends StatelessWidget {
                       endColor: const Color(0xFFFBBF24),
                       icon: Icons.warning_amber_rounded,
                       targetScreen: const AnomalyScreen(),
-                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.2, end: 0),
-
+                    )
+                        .animate()
+                        .fadeIn(delay: 700.ms)
+                        .slideY(begin: 0.2, end: 0),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -236,7 +239,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                   Text(
+                  Text(
                     subtitle,
                     style: GoogleFonts.poppins(
                       color: Colors.white70,

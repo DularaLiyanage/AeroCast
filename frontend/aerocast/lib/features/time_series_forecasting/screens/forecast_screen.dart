@@ -64,11 +64,13 @@ class _ForecastScreenState extends State<ForecastScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA), // Soft modern background
       appBar: AppBar(
-        title: Text("Forecast", style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+        title: Text("Forecast", style: GoogleFonts.dmSans(fontWeight: FontWeight.w800, color: Colors.black87)),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: isLoading 
           ? const Center(child: CircularProgressIndicator())
@@ -143,17 +145,25 @@ class _ForecastScreenState extends State<ForecastScreen> {
   }
 
   Widget _buildLocationDropdown() {
-    // ... (Your existing dropdown code) ...
     return Container(
-      // ... (Same as before) ...
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedLocation,
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.black54),
           isExpanded: true,
           items: ["baththaramulla", "kandy"].map((String value) {
             return DropdownMenuItem<String>(
               value: value,
-              child: Text(value.toUpperCase(), style: const TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                value.toUpperCase(), 
+                style: GoogleFonts.dmSans(fontWeight: FontWeight.w700, fontSize: 14, color: Colors.black87),
+              ),
             );
           }).toList(),
           onChanged: (newValue) {

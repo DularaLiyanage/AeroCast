@@ -6,8 +6,17 @@ import '../utils/constants.dart';
 
 class AqiChart extends StatefulWidget {
   final List<AqiPrediction> predictions;
+  final bool showAqi;
+  final bool showMin;
+  final bool showMax;
 
-  const AqiChart({super.key, required this.predictions});
+  const AqiChart({
+    super.key,
+    required this.predictions,
+    this.showAqi = true,
+    this.showMin = true,
+    this.showMax = true,
+  });
 
   @override
   State<AqiChart> createState() => _AqiChartState();
@@ -31,23 +40,27 @@ class _AqiChartState extends State<AqiChart> {
     minY = (minY - 10).clamp(0, 500);
 
     final lineBarsData = [
-      // Max Line (Hidden)
+      // Max Line
       LineChartBarData(
         spots: widget.predictions.asMap().entries.map((e) {
           return FlSpot(e.key.toDouble(), e.value.max);
         }).toList(),
         isCurved: true,
-        color: Colors.transparent,
+        color: widget.showMax ? Colors.blueGrey.shade400 : Colors.transparent,
+        barWidth: widget.showMax ? 2 : 0,
+        dashArray: widget.showMax ? [6, 4] : null,
         dotData: FlDotData(show: false),
         belowBarData: BarAreaData(show: false),
       ),
-      // Min Line (Hidden)
+      // Min Line
       LineChartBarData(
         spots: widget.predictions.asMap().entries.map((e) {
           return FlSpot(e.key.toDouble(), e.value.min);
         }).toList(),
         isCurved: true,
-        color: Colors.transparent,
+        color: widget.showMin ? Colors.teal.shade400 : Colors.transparent,
+        barWidth: widget.showMin ? 2 : 0,
+        dashArray: widget.showMin ? [6, 4] : null,
         dotData: FlDotData(show: false),
         belowBarData: BarAreaData(show: false),
       ),
@@ -57,11 +70,11 @@ class _AqiChartState extends State<AqiChart> {
           return FlSpot(e.key.toDouble(), e.value.aqi);
         }).toList(),
         isCurved: true,
-        color: AppColors.primaryText,
-        barWidth: 3,
+        color: widget.showAqi ? AppColors.primaryText : Colors.transparent,
+        barWidth: widget.showAqi ? 3 : 0,
         isStrokeCapRound: true,
         dotData: FlDotData(
-            show: true,
+            show: widget.showAqi,
             getDotPainter: (spot, percent, barData, index) {
               return FlDotCirclePainter(
                 radius: 2,
@@ -70,7 +83,7 @@ class _AqiChartState extends State<AqiChart> {
               );
             }),
         belowBarData: BarAreaData(
-          show: true,
+          show: widget.showAqi,
           gradient: LinearGradient(
             colors: [
               AppColors.primaryText.withOpacity(0.1),
@@ -95,7 +108,7 @@ class _AqiChartState extends State<AqiChart> {
                 tooltipBgColor: Colors.black,
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
-                    if (spot.barIndex != 2) return null;
+                    if (!widget.showAqi || spot.barIndex != 2) return null;
                     final data = widget.predictions[spot.x.toInt()];
                     return LineTooltipItem('${data.time}\n',
                         const TextStyle(color: Colors.white70, fontSize: 12),
@@ -122,6 +135,7 @@ class _AqiChartState extends State<AqiChart> {
                 if (response == null || response.lineBarSpots == null) {
                   return;
                 }
+                if (!widget.showAqi) return;
                 // Handle Trace/Drag or Tap to update position
                 if (event is FlTapDownEvent ||
                     event is FlPanDownEvent ||
@@ -140,7 +154,7 @@ class _AqiChartState extends State<AqiChart> {
                   false, // Disable default auto-dismiss behavior
             ),
             // Show tooltip permanently if tapped
-            showingTooltipIndicators: _touchedIndex != null
+            showingTooltipIndicators: widget.showAqi && _touchedIndex != null
                 ? [
                     ShowingTooltipIndicators([
                       LineBarSpot(lineBarsData[2], 2,
@@ -203,18 +217,28 @@ class _AqiChartState extends State<AqiChart> {
               ),
             ),
             borderData: FlBorderData(show: false),
+            extraLinesData: ExtraLinesData(verticalLines: [
+              VerticalLine(
+                x: 0,
+                color: Colors.redAccent.withOpacity(0.35),
+                strokeWidth: 1.5,
+                dashArray: [4, 4],
+              ),
+            ]),
             minX: 0,
             maxX: widget.predictions.length.toDouble() - 1,
             minY: minY,
             maxY: maxY,
             lineBarsData: lineBarsData,
-            betweenBarsData: [
-              BetweenBarsData(
-                fromIndex: 0,
-                toIndex: 1,
-                color: Colors.blueGrey.withOpacity(0.15),
-              )
-            ],
+            betweenBarsData: widget.showMin && widget.showMax
+                ? [
+                    BetweenBarsData(
+                      fromIndex: 0,
+                      toIndex: 1,
+                      color: Colors.blueGrey.withOpacity(0.15),
+                    )
+                  ]
+                : [],
           ),
         ),
       ),
