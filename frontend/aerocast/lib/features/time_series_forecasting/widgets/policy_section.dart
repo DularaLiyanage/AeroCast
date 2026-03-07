@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../utils/forecast_utils.dart'; // Import the utils
+import '../../risk_scoring/utils/constants.dart';
 
 class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
   final List<dynamic> values;
@@ -28,7 +30,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
         margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.green[50],
+          color: Colors.green.shade50, // Keep semantic green for good
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.green.withOpacity(0.3)),
         ),
@@ -57,7 +59,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
       margin: const EdgeInsets.symmetric(vertical: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardGray,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.red.withOpacity(0.1)),
         boxShadow: [
@@ -76,7 +78,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red[50],
+                  color: Colors.red[50], // Keep semantic red for urgent alerts
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.gavel, color: Colors.red[700], size: 24),
@@ -87,11 +89,11 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
                 children: [
                   Text(
                     "Recommended Actions",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                   ),
                   Text(
                     "Suggested interventions to lower levels",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    style: TextStyle(fontSize: 12, color: AppColors.secondaryText),
                   ),
                 ],
               ),
@@ -105,7 +107,7 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // FIX: Use ForecastUtils.getIconData
-                  Icon(ForecastUtils.getIconData(action['icon']!), size: 20, color: Colors.grey[700]),
+                  Icon(ForecastUtils.getIconData(action['icon']!), size: 20, color: AppColors.primaryBlue),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -113,11 +115,15 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
                       children: [
                         Text(
                           action['title'] ?? "",
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primaryText),
                         ),
                         Text(
                           action['desc'] ?? action['text'] ?? "",
-                          style: const TextStyle(fontSize: 13, color: Colors.black87),
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            color: AppColors.primaryText.withOpacity(0.7),
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),
@@ -130,4 +136,4 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
       ),
     );
   }
-}
+}

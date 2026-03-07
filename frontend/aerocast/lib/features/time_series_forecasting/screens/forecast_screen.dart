@@ -9,6 +9,7 @@ import '../widgets/xai_section.dart';
 import '../widgets/pollutant_selector.dart';
 import '../widgets/policy_section.dart';
 import '../widgets/hero_card.dart';
+import '../../risk_scoring/utils/constants.dart'; // Added AppColors
 
 class ForecastScreen extends StatefulWidget {
   const ForecastScreen({super.key});
@@ -64,13 +65,13 @@ class _ForecastScreenState extends State<ForecastScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Soft modern background
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text("Forecast", style: GoogleFonts.dmSans(fontWeight: FontWeight.w800, color: Colors.black87)),
+        title: Text("Forecast", style: GoogleFonts.dmSans(fontWeight: FontWeight.w800, color: AppColors.primaryText)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: const IconThemeData(color: AppColors.primaryText),
       ),
       body: isLoading 
           ? const Center(child: CircularProgressIndicator())
