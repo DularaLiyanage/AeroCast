@@ -87,6 +87,7 @@ class XaiSection extends StatelessWidget { // FIX: Renamed Class
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
@@ -99,6 +100,7 @@ class XaiSection extends StatelessWidget { // FIX: Renamed Class
               const SizedBox(width: 12),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     "Primary Drivers",

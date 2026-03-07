@@ -86,6 +86,7 @@ class ForecastChart extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 36,
                       interval: 6,
                       getTitlesWidget: (val, meta) {
                         int hour = val.toInt();

@@ -19,6 +19,7 @@ class PollutantSelector extends StatelessWidget { // FIX: Renamed Class
     
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      clipBehavior: Clip.none,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: forecastData!.keys.where((k) => !k.endsWith('_xai')).map((key) {
@@ -29,10 +30,12 @@ class PollutantSelector extends StatelessWidget { // FIX: Renamed Class
               // FIX: Use ForecastUtils for labels
               label: Text(ForecastUtils.pollutantLabels[key] ?? key),
               selected: isSelected,
+              showCheckmark: false, // Cleaner look
               selectedColor: Colors.black,
-              backgroundColor: Colors.white,
+              backgroundColor: Colors.grey[100],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: isSelected ? Colors.black : Colors.transparent)),
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color: isSelected ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.w600,
               ),
               // FIX: Call the parent function instead of setState
