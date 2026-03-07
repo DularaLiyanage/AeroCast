@@ -46,10 +46,10 @@ doc/api/
 cache.pkl
 
 # Ignore entire data folder (downloaded datasets)
-data/
+/data/
 
 # Ignore models folder (if you store trained models)
-models/
+/models/
 
 # Ignore common ML model formats
 *.pt
