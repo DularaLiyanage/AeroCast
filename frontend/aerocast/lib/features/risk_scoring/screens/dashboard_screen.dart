@@ -52,6 +52,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  }
+
   void _switchLocation(String location) {
     final provider = Provider.of<AqiProvider>(context, listen: false);
     if (provider.isLoading || _currentLocation == location) return;
@@ -67,232 +74,238 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text('Air Quality Risk',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColors.primaryText,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Consumer<AqiProvider>(
-            builder: (context, provider, _) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Row(
+      body: Column(
+        children: [
+          _buildBlueHeader(),
+          // 4. Location Switcher (Moved below header)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+            child: Consumer<AqiProvider>(
+              builder: (context, provider, _) => Row(
                 children: [
                   Expanded(
                     child: _buildLocationButton('Battaramulla',
-                        isLoading: provider.isLoading),
+                        provider: provider),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildLocationButton('Kandy',
-                        isLoading: provider.isLoading),
+                    child: _buildLocationButton('Kandy', provider: provider),
                   ),
                 ],
               ),
             ),
           ),
-        ),
-      ),
-      body: Consumer<AqiProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return _buildLoadingSkeleton();
-          }
+          Expanded(
+            child: Consumer<AqiProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return _buildLoadingSkeleton();
+                }
 
-          if (provider.error != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline,
-                      size: 48, color: Colors.redAccent),
-                  const SizedBox(height: 16),
-                  Text('Error loading data',
-                      style: GoogleFonts.poppins(fontSize: 18)),
-                  Text(provider.error!,
-                      style: GoogleFonts.poppins(color: Colors.grey),
-                      textAlign: TextAlign.center),
-                  const SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: () => provider.loadPredictions(_currentLocation),
-                    child: const Text('Try Again'),
-                  )
-                ],
-              ),
-            );
-          }
+                if (provider.error != null) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.error_outline,
+                            size: 48, color: Colors.redAccent),
+                        const SizedBox(height: 16),
+                        Text('Error loading data',
+                            style: GoogleFonts.poppins(
+                                fontSize: 18, color: AppColors.primaryText)),
+                        Text(provider.error!,
+                            style: GoogleFonts.poppins(
+                                color: AppColors.secondaryText),
+                            textAlign: TextAlign.center),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () =>
+                              provider.loadPredictions(_currentLocation),
+                          child: const Text('Try Again'),
+                        )
+                      ],
+                    ),
+                  );
+                }
 
-          if (provider.predictions.isEmpty) {
-            return const Center(child: Text("No data available."));
-          }
+                if (provider.predictions.isEmpty) {
+                  return const Center(
+                      child: Text("No data available.",
+                          style: TextStyle(color: AppColors.primaryText)));
+                }
 
-          // Data is ready
-          final current = provider.predictions.first;
-          final predictions = provider.predictions;
+                // Data is ready
+                final current = provider.predictions.first;
+                final predictions = provider.predictions;
 
-          return AnimatedSwitcher(
-            duration: const Duration(milliseconds: 280),
-            switchInCurve: Curves.easeOutCubic,
-            switchOutCurve: Curves.easeInCubic,
-            child: SingleChildScrollView(
-              key: ValueKey(_currentLocation),
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 0. Health Alert Banner
-                    if (current.healthAlert != null && !_alertDismissed)
-                      Builder(builder: (context) {
-                        final alertColorName =
-                            current.healthAlert!['color'] as String?;
-                        final alertColor = alertColorName != null
-                            ? AppColors.getColor(alertColorName)
-                            : AppColors.getColor(current.colour);
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 280),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: SingleChildScrollView(
+                    key: ValueKey(_currentLocation),
+                    physics: const BouncingScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 0. Health Alert Banner
+                          if (current.healthAlert != null && !_alertDismissed)
+                            Builder(builder: (context) {
+                              final alertColorName =
+                                  current.healthAlert!['color'] as String?;
+                              final alertColor = alertColorName != null
+                                  ? AppColors.getColor(alertColorName)
+                                  : AppColors.getColor(current.colour);
 
-                        return Container(
-                          width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 24),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                alertColor.withOpacity(0.25),
-                                alertColor.withOpacity(0.08),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: alertColor.withOpacity(0.4),
-                              width: 2,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: alertColor.withOpacity(0.15),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(18),
-                                child: Row(
+                              return Container(
+                                width: double.infinity,
+                                margin: const EdgeInsets.only(bottom: 24),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      alertColor.withOpacity(0.25),
+                                      alertColor.withOpacity(0.08),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: alertColor.withOpacity(0.4),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: alertColor.withOpacity(0.15),
+                                      blurRadius: 12,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Stack(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: alertColor.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Icon(
-                                        Icons.warning_amber_rounded,
-                                        color: alertColor,
-                                        size: 28,
-                                      ),
-                                    )
-                                        .animate(
-                                            onPlay: (controller) =>
-                                                controller.repeat())
-                                        .shimmer(
-                                          duration: 2000.ms,
-                                          color: Colors.white.withOpacity(0.3),
-                                        )
-                                        .shake(
-                                          hz: 0.5,
-                                          duration: 2000.ms,
-                                        ),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                    Padding(
+                                      padding: const EdgeInsets.all(18),
+                                      child: Row(
                                         children: [
-                                          Row(
-                                            children: [
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 3),
-                                                decoration: BoxDecoration(
-                                                  color: alertColor,
-                                                  borderRadius:
-                                                      BorderRadius.circular(6),
+                                          Container(
+                                            padding: const EdgeInsets.all(12),
+                                            decoration: BoxDecoration(
+                                              color: alertColor.withOpacity(0.2),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                            ),
+                                            child: Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: alertColor,
+                                              size: 28,
+                                            ),
+                                          )
+                                              .animate(
+                                                  onPlay: (controller) =>
+                                                      controller.repeat())
+                                              .shimmer(
+                                                duration: 2000.ms,
+                                                color: Colors.white
+                                                    .withOpacity(0.3),
+                                              )
+                                              .shake(
+                                                hz: 0.5,
+                                                duration: 2000.ms,
+                                              ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                          horizontal: 8,
+                                                          vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: alertColor,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(6),
+                                                      ),
+                                                      child: Text(
+                                                        'HEALTH ALERT',
+                                                        style:
+                                                            GoogleFonts.poppins(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.white,
+                                                          fontSize: 10,
+                                                          letterSpacing: 1.2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
-                                                child: Text(
-                                                  'HEALTH ALERT',
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  current.healthAlert!['title'] ??
+                                                      'Alert',
                                                   style: GoogleFonts.poppins(
                                                     fontWeight: FontWeight.bold,
-                                                    color: Colors.white,
-                                                    fontSize: 10,
-                                                    letterSpacing: 1.2,
+                                                    color: AppColors.primaryText,
+                                                    fontSize: 16,
+                                                    height: 1.3,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            current.healthAlert!['title'] ??
-                                                'Alert',
-                                            style: GoogleFonts.poppins(
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primaryText,
-                                              fontSize: 16,
-                                              height: 1.3,
+                                                const SizedBox(height: 6),
+                                                Text(
+                                                  current.healthAlert![
+                                                          'message'] ??
+                                                      '',
+                                                  style: GoogleFonts.poppins(
+                                                    color:
+                                                        AppColors.secondaryText,
+                                                    fontSize: 13,
+                                                    height: 1.4,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            current.healthAlert!['message'] ??
-                                                '',
-                                            style: GoogleFonts.poppins(
-                                              color: AppColors.secondaryText,
-                                              fontSize: 13,
-                                              height: 1.4,
-                                            ),
-                                          ),
+                                          const SizedBox(width: 8),
                                         ],
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                  ],
-                                ),
-                              ),
-                              Positioned(
-                                top: 8,
-                                right: 8,
-                                child: Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: BorderRadius.circular(20),
-                                    onTap: _dismissAlert,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(6),
-                                      child: Icon(
-                                        Icons.close,
-                                        size: 18,
-                                        color: AppColors.secondaryText
-                                            .withOpacity(0.6),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                          onTap: _dismissAlert,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 18,
+                                              color: AppColors.secondaryText
+                                                  .withOpacity(0.6),
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ).animate().fadeIn(duration: 400.ms).slideY(
-                            begin: -0.3,
-                            duration: 500.ms,
-                            curve: Curves.easeOutCubic);
-                      }),
+                              ).animate().fadeIn(duration: 400.ms).slideY(
+                                  begin: -0.3,
+                                  duration: 500.ms,
+                                  curve: Curves.easeOutCubic);
+                            }),
 
                     // 1. Hero Status Card
                     Container(
@@ -411,7 +424,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Text(
                                 'Insight',
                                 style: GoogleFonts.poppins(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
+                                    fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                               ),
                             ],
                           ),
@@ -434,7 +447,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Text(
                       '24-Hour Forecast',
                       style: GoogleFonts.poppins(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+                          fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryText),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -505,8 +518,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -523,19 +539,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryText : Colors.white,
+          color: isActive ? Colors.white : Colors.white.withOpacity(0.15),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isActive
-                ? AppColors.primaryText
-                : AppColors.primaryText.withOpacity(0.15),
+                ? Colors.white
+                : Colors.white.withOpacity(0.3),
           ),
           boxShadow: isActive ? [AppStyles.softShadow] : null,
         ),
         child: Text(
           label,
           style: GoogleFonts.poppins(
-            color: isActive ? Colors.white : AppColors.primaryText,
+            color: isActive ? AppColors.primaryBlue : Colors.white,
             fontWeight: FontWeight.w600,
             fontSize: 12,
           ),
@@ -544,23 +560,110 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildLocationButton(String location, {required bool isLoading}) {
+  Widget _buildBlueHeader() {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.primaryBlue,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 1. AeroCast Text with Icon
+              Row(
+                children: [
+                  const Icon(Icons.air, color: Colors.white, size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    'AeroCast',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // 2. Time-based Greeting
+              Text(
+                _getGreeting(),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white.withOpacity(0.85),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // 3. User Row: Explorer + Profile + Alert
+              Row(
+                children: [
+                  Text(
+                    'Explorer',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {}, // Profile action
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      child: const Icon(Icons.person_rounded,
+                          color: Colors.white, size: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {}, // Alert action
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.notifications_active_rounded,
+                          color: Colors.white, size: 24),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLocationButton(String location, {required AqiProvider provider}) {
     final isSelected = _currentLocation == location;
+    final isLoading = provider.isLoading;
+
     return GestureDetector(
       onTap: () => _switchLocation(location),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color:
-              isSelected ? AppColors.primaryText : Colors.grey.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? AppColors.primaryBlue : AppColors.cardGray,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
-                ? AppColors.primaryText
-                : Colors.grey.withOpacity(0.3),
-            width: 1,
+                ? AppColors.primaryBlue
+                : Colors.grey.withOpacity(0.2),
           ),
+          boxShadow: isSelected ? [AppStyles.softShadow] : null,
         ),
         child: Center(
           child: Row(
@@ -576,13 +679,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               if (isSelected && isLoading) ...[
                 const SizedBox(width: 8),
-                SizedBox(
+                const SizedBox(
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
               ],
@@ -601,7 +703,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardGray,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [AppStyles.softShadow],
       ),
@@ -686,3 +788,4 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 }
+

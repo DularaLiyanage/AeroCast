@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../risk_scoring/utils/constants.dart';
+
 enum AnomalySeverity { low, moderate, high, critical }
 
 class PastAnomalyEvent {
@@ -124,12 +126,12 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
     final filteredEvents = allEvents.where((e) => e.location == selectedLocation).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("Past Detected Anomalies", style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
+        title: const Text("Past Detected Anomalies", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryText)),
+        backgroundColor: AppColors.cardGray,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.primaryText,
       ),
       body: Column(
         children: [
@@ -152,7 +154,7 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
   Widget _buildLocationSelector() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-      color: Colors.white,
+      color: AppColors.cardGray,
       child: Row(
         children: [
           _buildSelectButton("BATTARAMULLA"),
@@ -172,10 +174,10 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.shade600 : Colors.white,
+            color: isSelected ? AppColors.primaryBlue : AppColors.cardGray,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: isSelected ? Colors.blue.shade600 : Colors.grey.shade300),
-            boxShadow: isSelected ? [BoxShadow(color: Colors.blue.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+            border: Border.all(color: isSelected ? AppColors.primaryBlue : Colors.grey.shade300),
+            boxShadow: isSelected ? [AppStyles.softShadow] : [],
           ),
           child: Text(
             loc,
@@ -183,7 +185,7 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 13,
-              color: isSelected ? Colors.white : Colors.black54,
+              color: isSelected ? Colors.white : AppColors.secondaryText,
             ),
           ),
         ),
@@ -195,9 +197,9 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardGray,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [AppStyles.softShadow],
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -208,19 +210,21 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.location,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue.shade700, letterSpacing: 1.1, fontSize: 13),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      event.eventName,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2D3142)),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.location,
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryBlue, letterSpacing: 1.1, fontSize: 13),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        event.eventName,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryText),
+                      ),
+                    ],
+                  ),
                 ),
                 Column(
                   children: [
@@ -248,17 +252,17 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
                 Expanded(child: _buildMiniStat("Severity", event.severity.name.toUpperCase(), color: _getSeverityColor(event.severity))),
               ],
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Divider(height: 1, color: Colors.grey.withOpacity(0.2)),
             ),
             Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.secondaryText),
                 const SizedBox(width: 8),
                 Text(
                   "Detected: ${event.start.day}/${event.start.month}/${event.start.year} at ${event.start.hour}:00",
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: AppColors.secondaryText, fontSize: 13),
                 ),
               ],
             ),
@@ -272,17 +276,18 @@ class _PastAnomaliesScreenState extends State<PastAnomaliesScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.w500)),
+        Text(label, style: TextStyle(color: AppColors.secondaryText, fontSize: 11, fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         Text(
           value, 
           style: TextStyle(
             fontWeight: FontWeight.bold, 
             fontSize: 15, 
-            color: color ?? const Color(0xFF2D3142)
+            color: color ?? AppColors.primaryText
           )
         ),
       ],
     );
   }
 }
+

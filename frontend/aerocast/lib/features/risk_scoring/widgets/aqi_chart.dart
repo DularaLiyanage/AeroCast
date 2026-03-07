@@ -105,7 +105,7 @@ class _AqiChartState extends State<AqiChart> {
           LineChartData(
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                tooltipBgColor: Colors.black,
+                tooltipBgColor: AppColors.primaryText,
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((spot) {
                     if (!widget.showAqi || spot.barIndex != 2) return null;
@@ -189,7 +189,7 @@ class _AqiChartState extends State<AqiChart> {
                         child: Text(
                           widget.predictions[index].time,
                           style: GoogleFonts.poppins(
-                            color: Colors.grey,
+                            color: AppColors.secondaryText,
                             fontSize: 10,
                           ),
                         ),
@@ -208,7 +208,7 @@ class _AqiChartState extends State<AqiChart> {
                     return Text(
                       value.toInt().toString(),
                       style: GoogleFonts.poppins(
-                        color: Colors.grey,
+                        color: AppColors.secondaryText,
                         fontSize: 10,
                       ),
                     );
@@ -245,3 +245,4 @@ class _AqiChartState extends State<AqiChart> {
     );
   }
 }
+

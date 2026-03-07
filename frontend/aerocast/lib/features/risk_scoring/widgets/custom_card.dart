@@ -10,7 +10,7 @@ class CustomCard extends StatelessWidget {
     super.key, 
     required this.child, 
     this.padding = const EdgeInsets.all(16.0),
-    this.color = Colors.white,
+    this.color,
   });
 
   @override
@@ -18,7 +18,7 @@ class CustomCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppColors.cardGray,
         borderRadius: BorderRadius.circular(AppStyles.cardRadius),
         boxShadow: [AppStyles.softShadow],
       ),
@@ -29,3 +29,4 @@ class CustomCard extends StatelessWidget {
     );
   }
 }
+
