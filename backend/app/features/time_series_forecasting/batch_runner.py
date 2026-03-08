@@ -39,6 +39,54 @@ cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 
+# Function to get AQ history with lag and rolling features
+def get_open_meteo_aq_with_features(location_name):
+    coords = cordinates.get(location_name.lower(), cordinates["baththaramulla"])
+    
+    today = datetime.date.today() 
+    target_date = today - datetime.timedelta(days=1)
+
+    # Pull 8 days of data to safely calculate 24h lags/rolling means
+    start_date = target_date - datetime.timedelta(days=8)
+    
+    print(f"Fetching AQ History for {location_name.title()} from {start_date.strftime('%Y-%m-%d')} to {target_date.strftime('%Y-%m-%d')}...")
+
+    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
+    params = {
+        "latitude": coords["lat"],
+        "longitude": coords["lon"],
+        "hourly": ["pm10", "pm2_5"],
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": target_date.strftime("%Y-%m-%d")
+    }
+
+    responses = openmeteo.weather_api(url, params=params)
+    response = responses[0]
+    hourly = response.Hourly()
+
+    df = pd.DataFrame({
+        "Date": pd.date_range(
+            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
+            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=hourly.Interval()),
+            inclusive="left"
+        ),
+        "pm10": hourly.Variables(0).ValuesAsNumpy(),
+        "pm2_5": hourly.Variables(1).ValuesAsNumpy(),
+    })
+
+    # Shift data by 24 hours to create the exact lags
+    df['PM2 5 Conc_lag24'] = df['pm2_5'].shift(24)
+    df['PM10 Conc_lag24'] = df['pm10'].shift(24)
+    
+    # Calculate the 24-hour rolling mean
+    df['PM2 5 Conc_rolling24_mean'] = df['pm2_5'].rolling(window=24).mean()
+    df['PM10 Conc_rolling24_mean'] = df['pm10'].rolling(window=24).mean()
+
+    # Drop NaNs and return exactly 168 hours (7 days)
+    df = df.dropna()
+    return df.tail(168).reset_index(drop=True)
+
 # Get the weather for the location
 def get_real_weather_forecast(location_name):
 
@@ -125,35 +173,26 @@ def run_batch():
         print(f"\nProcessing {loc.upper()}...")
         loc_results = {}
         
-        # Load History
-        hist_file = f"{model_path}/{loc}_tft_input_data.pkl"
-        
+        # 1. Fetch Live APIs First
         try:
-            print(f"  Loading history: {hist_file} ...")
+            aq_history_df = get_open_meteo_aq_with_features(loc)
+            weather_df = get_real_weather_forecast(loc)
+        except Exception as e:
+            print(f"Failed to fetch live API data for {loc}: {e}")
+            continue
+
+        if weather_df.empty or aq_history_df.empty:
+            print("Skipping (Missing API Data)")
+            continue
+
+        # 2. Load Local History
+        hist_file = f"{model_path}/{loc}_tft_input_data.pkl"
+        try:
+            print(f"  Loading long-term history: {hist_file} ...")
             history_df = pd.read_pickle(hist_file)
-            
-            # Pre-calculate lags
-            latest_values = {}
-            for p in ["PM2 5 Conc", "PM10 Conc", "NO2 Conc", "SO2 Conc", "O3 Conc"]:
-                # Adjust 'residual_value' to actual value column if needed
-                if p in history_df['pollutant_id'].unique():
-                    latest_values[p] = history_df[history_df['pollutant_id'] == p]['residual_value'].iloc[-1]
-                else:
-                    latest_values[p] = 0.0
-            print("History loaded.")
-            
         except Exception as e:
             print(f"Failed to load history for {loc}: {e}")
             history_df = pd.DataFrame()
-            latest_values = {p: 0.0 for p in ["PM2 5 Conc", "PM10 Conc", "NO2 Conc", "SO2 Conc", "O3 Conc"]}
-        
-        # Get Weather
-        weather_df = get_real_weather_forecast(loc)
-        if weather_df.empty:
-            print("Skipping (No Weather Data)")
-            del history_df
-            gc.collect()
-            continue
 
         # Loop Pollutants
         for poll in pollutants:
@@ -174,15 +213,24 @@ def run_batch():
                 poll_future = weather_df.copy()
                 poll_future['pollutant_id'] = poll
 
-                # Fill Lags 
-                last_pm25 = poll_history['PM2 5 Conc_lag24'].iloc[-1] if 'PM2 5 Conc_lag24' in poll_history else 0
-                last_pm10 = poll_history['PM10 Conc_lag24'].iloc[-1] if 'PM10 Conc_lag24' in poll_history else 0
+                # 3. Inject Actual Live Data for Future Lags
+                if len(aq_history_df) >= 24:
+                    # Get the actual PM values from the past 24 hours
+                    past_24_pm25 = aq_history_df['pm2_5'].values[-24:]
+                    past_24_pm10 = aq_history_df['pm10'].values[-24:]
 
-                # Fill Lags
-                poll_future['PM2 5 Conc_lag24'] = last_pm25
-                poll_future['PM2 5 Conc_rolling24_mean'] = last_pm25
-                poll_future['PM10 Conc_lag24'] = last_pm10
-                poll_future['PM10 Conc_rolling24_mean'] = last_pm10
+                    # Map past actuals to future lag columns
+                    poll_future['PM2 5 Conc_lag24'] = past_24_pm25
+                    poll_future['PM10 Conc_lag24'] = past_24_pm10
+                    
+                    # Set the baseline rolling mean to the mean of the past 24 hours
+                    poll_future['PM2 5 Conc_rolling24_mean'] = past_24_pm25.mean()
+                    poll_future['PM10 Conc_rolling24_mean'] = past_24_pm10.mean()
+                else:
+                    poll_future['PM2 5 Conc_lag24'] = 0.0
+                    poll_future['PM10 Conc_lag24'] = 0.0
+                    poll_future['PM2 5 Conc_rolling24_mean'] = 0.0
+                    poll_future['PM10 Conc_rolling24_mean'] = 0.0
                 
                 # Add Targets
                 poll_future['residual_value'] = 0.0
