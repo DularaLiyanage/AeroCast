@@ -102,8 +102,14 @@ class ForecastUtils {
       default: return Icons.admin_panel_settings;
     }
   }
+  
+  static String getUnit(String pollutant) {
+    if (pollutant == "PM2 5 Conc" || pollutant == "PM10 Conc") {
+      return "µg/m³";
+    }
+    return "ppb";
+  }
 
-  // ... [Paste your policyActions Map here] ...
   static final Map<String, List<Map<String, String>>> policyActions = {
     "PM10 Conc": [
       {"icon": "construction", "text": "Mandate water sprinkling at construction sites to reduce road dust."},

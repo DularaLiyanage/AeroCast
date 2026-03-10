@@ -101,7 +101,7 @@ class HeroCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
-                    "µg/m³",
+                    ForecastUtils.getUnit(pollutant),
                     style: GoogleFonts.poppins(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 18,
@@ -116,4 +116,4 @@ class HeroCard extends StatelessWidget {
       ),
     );
   }
-}
+}
