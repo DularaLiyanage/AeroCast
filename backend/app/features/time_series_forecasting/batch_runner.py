@@ -40,131 +40,116 @@ retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 
 # Function to get AQ history with lag and rolling features
-def get_open_meteo_aq_with_features(location_name):
+def build_live_inference_matrix(location_name, forecast_horizon=24):
+    """
+    Builds a continuous 192-hour dataframe (168h past + 24h future) 
+    directly from Open-Meteo APIs, completely eliminating the need for old pickle files.
+    """
     coords = cordinates.get(location_name.lower(), cordinates["baththaramulla"])
     
-    today = datetime.date.today() 
-    target_date = today - datetime.timedelta(days=1)
-
-    # Pull 8 days of data to safely calculate 24h lags/rolling means
-    start_date = target_date - datetime.timedelta(days=8)
-    
-    print(f"Fetching AQ History for {location_name.title()} from {start_date.strftime('%Y-%m-%d')} to {target_date.strftime('%Y-%m-%d')}...")
-
-    url = "https://air-quality-api.open-meteo.com/v1/air-quality"
-    params = {
-        "latitude": coords["lat"],
-        "longitude": coords["lon"],
-        "hourly": ["pm10", "pm2_5"],
-        "start_date": start_date.strftime("%Y-%m-%d"),
-        "end_date": target_date.strftime("%Y-%m-%d")
-    }
-
-    responses = openmeteo.weather_api(url, params=params)
-    response = responses[0]
-    hourly = response.Hourly()
-
-    df = pd.DataFrame({
-        "Date": pd.date_range(
-            start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-            end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-            freq=pd.Timedelta(seconds=hourly.Interval()),
-            inclusive="left"
-        ),
-        "pm10": hourly.Variables(0).ValuesAsNumpy(),
-        "pm2_5": hourly.Variables(1).ValuesAsNumpy(),
-    })
-
-    # Shift data by 24 hours to create the exact lags
-    df['PM2 5 Conc_lag24'] = df['pm2_5'].shift(24)
-    df['PM10 Conc_lag24'] = df['pm10'].shift(24)
-    
-    # Calculate the 24-hour rolling mean
-    df['PM2 5 Conc_rolling24_mean'] = df['pm2_5'].rolling(window=24).mean()
-    df['PM10 Conc_rolling24_mean'] = df['pm10'].rolling(window=24).mean()
-
-    # Drop NaNs and return exactly 168 hours (7 days)
-    df = df.dropna()
-    return df.tail(168).reset_index(drop=True)
-
-# Get the weather for the location
-def get_real_weather_forecast(location_name):
-
-    coords = cordinates.get(location_name, cordinates["baththaramulla"])
-
-    # Current Dates
+    # 1. Define the exact temporal window
     today = datetime.date.today()
-    start_date = today + datetime.timedelta(days=1)
-    end_date = start_date + datetime.timedelta(days=2)
-
-    print(f"Fetching Real Weather Forecast for: {start_date} to {end_date}...")
-
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
+    forecast_date = today + datetime.timedelta(days=1)
+    start_date = today - datetime.timedelta(days=8) 
+    
+    print(f"Building continuous 192-hour matrix for {location_name.upper()}...")
+    
+    # 2. Fetch Weather (Known Inputs)
+    weather_url = "https://api.open-meteo.com/v1/forecast"
+    weather_params = {
         "latitude": coords["lat"],
         "longitude": coords["lon"],
         "hourly": ["temperature_2m", "relative_humidity_2m", "rain", "surface_pressure", "wind_speed_10m", "wind_direction_10m"],
         "start_date": start_date.strftime("%Y-%m-%d"),
-        "end_date": end_date.strftime("%Y-%m-%d")
+        "end_date": forecast_date.strftime("%Y-%m-%d")
     }
-
-    # Send Request
-    responses = openmeteo.weather_api(url, params=params)
-    response = responses[0]
-
-    # Process Data
-    hourly = response.Hourly()
-
-    # Extract arrays
-    weather_data = {
+    w_resp = openmeteo.weather_api(weather_url, params=weather_params)[0].Hourly()
+    
+    weather_df = pd.DataFrame({
         "Date": pd.date_range(
-            start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
-            end = pd.to_datetime(hourly.TimeEnd(), unit = "s", utc = True),
-            freq = pd.Timedelta(seconds = hourly.Interval()),
-            inclusive = "left"
+            start=pd.to_datetime(w_resp.Time(), unit="s", utc=True),
+            end=pd.to_datetime(w_resp.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=w_resp.Interval()),
+            inclusive="left"
         ),
-        "AT": hourly.Variables(0).ValuesAsNumpy(),
-        "RH": hourly.Variables(1).ValuesAsNumpy(),
-        "Rain Gauge": hourly.Variables(2).ValuesAsNumpy(),
-        "BP": hourly.Variables(3).ValuesAsNumpy(),
-        "wind_speed": hourly.Variables(4).ValuesAsNumpy(),
-        "wind_deg": hourly.Variables(5).ValuesAsNumpy()
+        "AT": w_resp.Variables(0).ValuesAsNumpy(),
+        "RH": w_resp.Variables(1).ValuesAsNumpy(),
+        "Rain Gauge": w_resp.Variables(2).ValuesAsNumpy(),
+        "BP": w_resp.Variables(3).ValuesAsNumpy(),
+        "wind_speed": w_resp.Variables(4).ValuesAsNumpy(),
+        "wind_deg": w_resp.Variables(5).ValuesAsNumpy()
+    })
+
+    # 3. Fetch Air Quality (Observed Inputs)
+    aq_url = "https://air-quality-api.open-meteo.com/v1/air-quality"
+    aq_params = {
+        "latitude": coords["lat"],
+        "longitude": coords["lon"],
+        "hourly": ["pm10", "pm2_5", "nitrogen_dioxide", "ozone", "sulphur_dioxide"],
+        "start_date": start_date.strftime("%Y-%m-%d"),
+        "end_date": forecast_date.strftime("%Y-%m-%d")
     }
+    aq_resp = openmeteo.weather_api(aq_url, params=aq_params)[0].Hourly()
+    
+    aq_df = pd.DataFrame({
+        "Date": pd.date_range(
+            start=pd.to_datetime(aq_resp.Time(), unit="s", utc=True),
+            end=pd.to_datetime(aq_resp.TimeEnd(), unit="s", utc=True),
+            freq=pd.Timedelta(seconds=aq_resp.Interval()),
+            inclusive="left"
+        ),
+        "PM10 Conc": aq_resp.Variables(0).ValuesAsNumpy(),
+        "PM2 5 Conc": aq_resp.Variables(1).ValuesAsNumpy(),
+        "NO2 Conc": aq_resp.Variables(2).ValuesAsNumpy(),
+        "O3 Conc": aq_resp.Variables(3).ValuesAsNumpy(),
+        "SO2 Conc": aq_resp.Variables(4).ValuesAsNumpy()
+    })
 
-    weather_df = pd.DataFrame(data=weather_data)
+    # 4. Merge DataFrames
+    df = pd.merge(weather_df, aq_df, on="Date", how="inner")
 
-    # Feature Engineering
-    # Wind
-    wd_rad = weather_df['wind_deg'] * np.pi / 180
-    weather_df['WD_sin'] = np.sin(wd_rad)
-    weather_df['WD_cos'] = np.cos(wd_rad)
+    # 5. PREVENT DATA LEAKAGE: Mask Open-Meteo's future AQ predictions
+    future_mask = df['Date'].dt.date >= forecast_date
+    pollutants_list = ["PM10 Conc", "PM2 5 Conc", "NO2 Conc", "O3 Conc", "SO2 Conc"]
+    df.loc[future_mask, pollutants_list] = np.nan
 
-    # Time
-    weather_df['hour'] = weather_df['Date'].dt.hour
-    weather_df['month'] = weather_df['Date'].dt.month
-    weather_df['day_of_week'] = weather_df['Date'].dt.dayofweek
-    weather_df['is_weekend'] = weather_df['day_of_week'].isin([5, 6]).astype(int)
-    weather_df['traffic_hour'] = (
-        weather_df['hour'].isin(range(7, 10)) |
-        weather_df['hour'].isin(range(17, 20))
-    ).astype(int)
+    # 6. Time-Series Feature Engineering
+    for p in pollutants_list:
+        df[f"{p}_lag24"] = df[p].shift(24)
+        df[f"{p}_rolling24_mean"] = df[p].rolling(window=24).mean()
+        df[f"{p}_rolling24_mean"] = df[f"{p}_rolling24_mean"].ffill()
 
-    # Holiday
+    # 7. Weather Feature Engineering
+    wd_rad = df['wind_deg'] * np.pi / 180
+    df['WD_sin'] = np.sin(wd_rad)
+    df['WD_cos'] = np.cos(wd_rad)
+    df['Heat_Humidity_Interaction'] = df['AT'] * df['RH']
+
+    # 8. Calendar Flags
+    df['hour'] = df['Date'].dt.hour
+    df['month'] = df['Date'].dt.month
+    df['day_of_week'] = df['Date'].dt.dayofweek
+    df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int)
+    df['traffic_hour'] = (df['hour'].isin(range(7, 10)) | df['hour'].isin(range(17, 20))).astype(int)
+    
     sl_holidays = holidays.SriLanka(years=[2025, 2026])
+    df['is_holiday'] = df['Date'].dt.date.isin(sl_holidays).astype(int)
+    
+    df['monsoon_phase_Northeast Monsoon'] = df['month'].isin([12, 1, 2]).astype(int)
+    df['monsoon_phase_First Inter-monsoon'] = df['month'].isin([3, 4]).astype(int)
+    df['monsoon_phase_Southwest Monsoon'] = df['month'].isin([5, 6, 7, 8, 9]).astype(int)
+    df['monsoon_phase_Second Inter-monsoon'] = df['month'].isin([10, 11]).astype(int)
 
-    # Check if the Forecast Date is in the holiday list
-    weather_df['is_holiday'] = weather_df['Date'].dt.date.isin(sl_holidays).astype(int)
+    # 9. Clean and Trim to exactly 192 hours (168 Encoder + 24 Decoder)
+    df = df.dropna(subset=['PM2 5 Conc_lag24', 'AT']) 
+    df = df.tail(168 + forecast_horizon).reset_index(drop=True)
+    
+    # 10. Initialize target variables for PyTorch
+    df['residual_value'] = 0.0
+    df['sarimax_pred_scaled'] = 0.0 
+    df['time_idx'] = range(len(df))
 
-    # Monsoon (Dec/Jan is Northeast)
-    weather_df['monsoon_phase_Northeast Monsoon'] = weather_df['month'].isin([12, 1, 2]).astype(int)
-    weather_df['monsoon_phase_First Inter-monsoon'] = weather_df['month'].isin([3, 4]).astype(int)
-    weather_df['monsoon_phase_Southwest Monsoon'] = weather_df['month'].isin([5, 6, 7, 8, 9]).astype(int)
-    weather_df['monsoon_phase_Second Inter-monsoon'] = weather_df['month'].isin([10, 11]).astype(int)
-
-    # Interaction
-    weather_df['Heat_Humidity_Interaction'] = weather_df['AT'] * weather_df['RH']
-
-    return weather_df.iloc[:forecast_horizon]
+    return df
 
 def run_batch():
     full_forecast = {}
@@ -173,26 +158,16 @@ def run_batch():
         print(f"\nProcessing {loc.upper()}...")
         loc_results = {}
         
-        # 1. Fetch Live APIs First
+        # 1. Build the continuous matrix dynamically
         try:
-            aq_history_df = get_open_meteo_aq_with_features(loc)
-            weather_df = get_real_weather_forecast(loc)
+            combined_df_base = build_live_inference_matrix(loc, forecast_horizon)
         except Exception as e:
-            print(f"Failed to fetch live API data for {loc}: {e}")
+            print(f"Failed to build matrix for {loc}: {e}")
             continue
-
-        if weather_df.empty or aq_history_df.empty:
-            print("Skipping (Missing API Data)")
+            
+        if combined_df_base.empty:
+            print(f"Matrix for {loc} is empty. Skipping.")
             continue
-
-        # 2. Load Local History
-        hist_file = f"{model_path}/{loc}_tft_input_data.pkl"
-        try:
-            print(f"  Loading long-term history: {hist_file} ...")
-            history_df = pd.read_pickle(hist_file)
-        except Exception as e:
-            print(f"Failed to load history for {loc}: {e}")
-            history_df = pd.DataFrame()
 
         # Loop Pollutants
         for poll in pollutants:
@@ -204,51 +179,9 @@ def run_batch():
                 
             print(f"  Generating {poll}...", end=" ")
             try:
-                # Prepare Data 
-                if not history_df.empty:
-                    poll_history = history_df[history_df['pollutant_id'] == poll].tail(168).copy()
-                else:
-                    poll_history = pd.DataFrame()
-
-                poll_future = weather_df.copy()
-                poll_future['pollutant_id'] = poll
-
-                # 3. Inject Actual Live Data for Future Lags
-                if len(aq_history_df) >= 24:
-                    # Get the actual PM values from the past 24 hours
-                    past_24_pm25 = aq_history_df['pm2_5'].values[-24:]
-                    past_24_pm10 = aq_history_df['pm10'].values[-24:]
-
-                    # Map past actuals to future lag columns
-                    poll_future['PM2 5 Conc_lag24'] = past_24_pm25
-                    poll_future['PM10 Conc_lag24'] = past_24_pm10
-                    
-                    # Set the baseline rolling mean to the mean of the past 24 hours
-                    poll_future['PM2 5 Conc_rolling24_mean'] = past_24_pm25.mean()
-                    poll_future['PM10 Conc_rolling24_mean'] = past_24_pm10.mean()
-                else:
-                    poll_future['PM2 5 Conc_lag24'] = 0.0
-                    poll_future['PM10 Conc_lag24'] = 0.0
-                    poll_future['PM2 5 Conc_rolling24_mean'] = 0.0
-                    poll_future['PM10 Conc_rolling24_mean'] = 0.0
-                
-                # Add Targets
-                poll_future['residual_value'] = 0.0
-                poll_future['sarimax_pred_scaled'] = 0.0 
-
-                # Combine
-                combined_df = pd.concat([poll_history, poll_future], ignore_index=True)
-                combined_df = combined_df.fillna(0.0)
-                
-                # Fix Time Index
-                if not poll_history.empty:
-                    last_idx = int(poll_history['time_idx'].max())
-                    new_indices = range(last_idx + 1, last_idx + 1 + len(poll_future))
-                    combined_df.iloc[-len(poll_future):, combined_df.columns.get_loc('time_idx')] = new_indices
-                else:
-                    combined_df['time_idx'] = range(len(combined_df))
-                
-                combined_df['time_idx'] = combined_df['time_idx'].astype(int)
+                # Create a copy for this specific pollutant model
+                combined_df = combined_df_base.copy()
+                combined_df['pollutant_id'] = poll
 
                 # SARIMAX Prediction
                 with open(sarimax_path, "rb") as f:
@@ -382,7 +315,7 @@ def run_batch():
         # Store results 
         full_forecast[loc] = loc_results
         
-        del history_df
+        del combined_df_base
         gc.collect()
 
     # Save Final as a JSON
