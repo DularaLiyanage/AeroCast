@@ -278,7 +278,7 @@ async def predict_24h(request: PredictionRequest):
                      
                      if health_alert:
                          # Append time to message
-                         health_alert["message"] = f"{health_alert['message']} (Expected around {next_hour_time})"
+                         health_alert["message"] = f"[Expected around {next_hour_time}] {health_alert['message']}"
                          
                          # Add color based on risk level
                          alert_level, alert_color = get_risk_info(next_hour_val, assets["config"])
@@ -299,7 +299,7 @@ async def predict_24h(request: PredictionRequest):
         
         health_alert = utils.get_cea_alert(test_aqi)
         if health_alert:
-            health_alert["message"] = f"{health_alert['message']} (Expected around {test_time_str})"
+            health_alert["message"] = f"[Expected around {test_time_str}] {health_alert['message']}"
             _, alert_color = get_risk_info(test_aqi, assets["config"])
             health_alert["color"] = alert_color
             
