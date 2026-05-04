@@ -55,8 +55,9 @@ class PolicySection extends StatelessWidget {
       );
     }
 
-    // 2. Get Specific Actions
-    var actions = ForecastUtils.policyActions[pollutant] ?? ForecastUtils.policyActions["default"]!;
+    // 2. Get Specific Actions — safe lookup, no crash if pollutant missing
+    final actions = ForecastUtils.policyActions[pollutant];
+    if (actions == null || actions.isEmpty) return const SizedBox.shrink();
 
     // 3. Derive XAI context (dominant category + tip)
     String? dominantCategory;
