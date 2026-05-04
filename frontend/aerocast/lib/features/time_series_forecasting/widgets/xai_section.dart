@@ -1,83 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
+import '../utils/forecast_utils.dart';
 
-class XaiSection extends StatelessWidget { // FIX: Renamed Class
-  final Map<String, dynamic> rawXaiData; // FIX: Added variable
+class XaiSection extends StatelessWidget {
+  final Map<String, dynamic> rawXaiData;
 
   const XaiSection({super.key, required this.rawXaiData});
 
   @override
   Widget build(BuildContext context) {
-    // 1. DEFINITIONS: Map Technical Names to User Friendly Names
-    final Map<String, String> friendlyNames = {
-      // Weather
-      "AT": "Temperature",
-      "RH": "Humidity",
-      "BP": "Atmospheric Pressure",
-      "Rain Gauge": "Rainfall",
-      "Solar Radiation": "Solar Intensity",
-      
-      // Time & Traffic
-      "time_idx": "Long-term Trend",
-      "traffic_hour": "Traffic Patterns",
-      "is_weekend": "Weekend Effect",
-      "is_holiday": "Holiday Effect",
-      "hour": "Time of Day",
-      "month": "Seasonal Effect",
-      
-      // Complex Features
-      "Heat_Humidity_Interaction": "Heat Index",
-      "monsoon_phase_First Inter-monsoon": "Monsoon Season",
-      "monsoon_phase_Northeast Monsoon": "Monsoon Season",
-      "monsoon_phase_Second Inter-monsoon": "Monsoon Season",
-      
-      // Model Internals
-      "sarimax_pred_scaled": "Daily Seasonal Cycle",
-      "PM2 5 Conc_lag24": "Past Pollution Levels",
-      "PM2 5 Conc_rolling24_mean": "Past Pollution Levels",
-      "PM10 Conc_lag24": "Past Dust Levels",
-      "PM10 Conc_rolling24_mean": "Past Dust Levels",
-      
-      // Wind 
-      "WD_sin": "Wind Direction",
-      "WD_cos": "Wind Direction",
-    };
+    final drivers = ForecastUtils.processXaiDrivers(rawXaiData, topN: 5);
+    if (drivers.isEmpty) return const SizedBox.shrink();
 
-    // 2. LOGIC: Group and Sum the Weights
-    Map<String, double> processedDrivers = {};
+    final breakdown = ForecastUtils.getXaiCategoryBreakdown(rawXaiData);
+    final dominantCategory = ForecastUtils.getDominantXaiCategory(rawXaiData);
+    final tip = ForecastUtils.getXaiContextualTip(dominantCategory);
+    final catColor = ForecastUtils.xaiCategoryColors[dominantCategory] ?? Colors.blue;
+    final catIcon = ForecastUtils.xaiCategoryIcons[dominantCategory] ?? Icons.info_outline;
+    final maxPct = drivers.first.value;
 
-    rawXaiData.forEach((key, value) {
-      // Ensure value is treated as double
-      double weight = (value as num).toDouble();
-      
-      // Find the friendly name (or use the original if missing)
-      String cleanName = friendlyNames[key] ?? key.replaceAll('_', ' ');
+    // Build donut sections from category breakdown (skip < 1%)
+    final donutSections = breakdown.entries
+        .where((e) => e.value >= 1.0)
+        .map((e) {
+          final color = ForecastUtils.xaiCategoryColors[e.key] ?? Colors.grey;
+          return PieChartSectionData(
+            value: e.value,
+            color: color,
+            radius: 22,
+            showTitle: false,
+          );
+        })
+        .toList();
 
-      // Add to the merge map (Summing up weights if names match)
-      if (processedDrivers.containsKey(cleanName)) {
-        processedDrivers[cleanName] = processedDrivers[cleanName]! + weight;
-      } else {
-        processedDrivers[cleanName] = weight;
-      }
-    });
-
-    // 3. SORT: Highest Impact First
-    var sortedEntries = processedDrivers.entries.toList()
+    // Legend entries sorted by value descending
+    final legendEntries = breakdown.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    // 4. DISPLAY: Take Top 4 Only
-    if (sortedEntries.length > 4) {
-      sortedEntries = sortedEntries.sublist(0, 4);
-    }
-
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 20),
+      margin: const EdgeInsets.symmetric(vertical: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -86,8 +54,8 @@ class XaiSection extends StatelessWidget { // FIX: Renamed Class
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header ──
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
@@ -100,68 +68,221 @@ class XaiSection extends StatelessWidget { // FIX: Renamed Class
               const SizedBox(width: 12),
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    "Primary Drivers",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    "What is causing this forecast?",
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
+                  Text("Why this forecast?",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text("Top factors influencing this prediction",
+                      style: TextStyle(fontSize: 12, color: Colors.grey)),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          if (sortedEntries.isEmpty)
-             const Text("No significant drivers identified."),
 
-          ...sortedEntries.map((entry) {
-            final double value = entry.value;
-            final String name = entry.key;
-            
-            // Choose color based on intensity logic (assuming value is % or relevant scale)
-            // Adjust threshold based on your actual XAI data range (e.g., if max is 100 or 1.0)
-            Color barColor = Colors.blue;
-            if (value > 5.0) barColor = const Color(0xFFFF7E00); // Example thresholds
-            if (value > 10.0) barColor = const Color(0xFFFF0000); 
-            
-            // Simple normalization for the bar width (assuming max around 15%)
-            double percentage = (value / 15.0).clamp(0.0, 1.0);
+          const SizedBox(height: 20),
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16.0),
-              child: Column(
+          // ── Donut chart + category legend ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Donut
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        name,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  SizedBox(
+                    height: 110,
+                    width: 110,
+                    child: PieChart(
+                      PieChartData(
+                        sections: donutSections,
+                        centerSpaceRadius: 35,
+                        sectionsSpace: 2,
+                        startDegreeOffset: -90,
                       ),
-                      Text(
-                        "${value.toStringAsFixed(1)}%",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: barColor),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: percentage, 
-                      backgroundColor: Colors.grey[100],
-                      color: barColor,
-                      minHeight: 6,
                     ),
                   ),
+                  Icon(catIcon, color: catColor, size: 22),
                 ],
               ),
-            );
-          }),
+
+              const SizedBox(width: 20),
+
+              // Legend
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: legendEntries.map((e) {
+                    final color = ForecastUtils.xaiCategoryColors[e.key] ?? Colors.grey;
+                    final icon = ForecastUtils.xaiCategoryIcons[e.key] ?? Icons.circle;
+                    final isDominant = e.key == dominantCategory;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(icon, size: 13, color: color),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              e.key,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isDominant ? FontWeight.bold : FontWeight.normal,
+                                color: isDominant ? Colors.black87 : Colors.black54,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            "${e.value.toStringAsFixed(1)}%",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: color,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Contextual tip ──
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: catColor.withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(12),
+              border: Border(left: BorderSide(color: catColor, width: 3)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(catIcon, size: 15, color: catColor),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    tip,
+                    style: const TextStyle(
+                        fontSize: 13, color: Colors.black87, height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Divider before driver bars ──
+          Row(
+            children: [
+              const Expanded(child: Divider()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Text("Top Factors",
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+              ),
+              const Expanded(child: Divider()),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Driver bars ──
+          ...drivers.map((entry) => _DriverRow(
+                name: entry.key,
+                pct: entry.value,
+                barFraction: maxPct > 0
+                    ? (entry.value / maxPct).clamp(0.0, 1.0)
+                    : 0.0,
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _DriverRow extends StatelessWidget {
+  final String name;
+  final double pct;
+  final double barFraction;
+
+  const _DriverRow({
+    required this.name,
+    required this.pct,
+    required this.barFraction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final category =
+        ForecastUtils.xaiDriverCategories[name] ?? 'Weather';
+    final color =
+        ForecastUtils.xaiCategoryColors[category] ?? Colors.blue;
+    final icon =
+        ForecastUtils.xaiCategoryIcons[category] ?? Icons.info_outline;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(name,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 14)),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(category,
+                    style: TextStyle(
+                        fontSize: 10,
+                        color: color,
+                        fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 42,
+                child: Text("${pct.toStringAsFixed(1)}%",
+                    textAlign: TextAlign.end,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                        color: color)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: barFraction,
+              backgroundColor: Colors.grey[100],
+              color: color,
+              minHeight: 6,
+            ),
+          ),
         ],
       ),
     );

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../data/forecast_service.dart';
+import '../utils/forecast_utils.dart';
 import '../widgets/forecast_chart.dart';
 import '../widgets/xai_section.dart';
 import '../widgets/pollutant_selector.dart';
@@ -77,6 +78,20 @@ class _ForecastScreenState extends State<ForecastScreen> {
     return DateFormat('EEEE, h:00 a').format(selectedTime);
   }
 
+  Map<String, dynamic>? _rawXaiData() {
+    if (forecastData == null) return null;
+    final key = "${selectedPollutant}_xai";
+    final raw = forecastData![key];
+    if (raw == null) return null;
+    return Map<String, dynamic>.from(raw);
+  }
+
+  String? _topXaiDriver() {
+    final raw = _rawXaiData();
+    if (raw == null || raw.isEmpty) return null;
+    return ForecastUtils.getTopXaiDriver(raw);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -120,6 +135,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                           value: (forecastData![selectedPollutant][selectedHourIndex] as num).toDouble(),
                           pollutant: selectedPollutant,
                           time: _getSelectedTimeText(),
+                          topDriver: _topXaiDriver(),
                         ),
 
                       const SizedBox(height: 30),
@@ -143,6 +159,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                         PolicySection(
                           values: forecastData![selectedPollutant],
                           pollutant: selectedPollutant,
+                          xaiData: _rawXaiData(),
                         ),
 
                       const SizedBox(height: 30),
