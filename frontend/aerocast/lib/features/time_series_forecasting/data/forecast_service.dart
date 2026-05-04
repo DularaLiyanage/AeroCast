@@ -1,42 +1,48 @@
 import '../../../../core/api_service.dart';
 
+class ForecastResult {
+  final String forecastDate;
+  final Map<String, dynamic> forecast;
+
+  ForecastResult({required this.forecastDate, required this.forecast});
+}
+
 class ForecastService {
-  static const String _endpoint = "/time_forecast/forecast"; 
+  static const String _forecastEndpoint = "/time_forecast/forecast";
+  static const String _datesEndpoint = "/time_forecast/dates";
 
-  Future<Map<String, dynamic>> fetchForecast(String location) async {
+  Future<List<String>> fetchAvailableDates() async {
     try {
-      print("Sending request to: $_endpoint for $location");
-      
-      final response = await ApiService.post(
-        _endpoint, 
-        {"location": location}
-      );
+      final response = await ApiService.get(_datesEndpoint);
+      if (response == null || !response.containsKey('dates')) return [];
+      return List<String>.from(response['dates']);
+    } catch (e) {
+      print("ForecastService.fetchAvailableDates error: $e");
+      return [];
+    }
+  }
 
-      print("Server Response: $response");
+  Future<ForecastResult> fetchForecast(String location, {String? date}) async {
+    try {
+      final body = <String, dynamic>{"location": location};
+      if (date != null) body["date"] = date;
 
-      if (response == null) {
-        throw Exception("Server returned null response");
-      }
+      final response = await ApiService.post(_forecastEndpoint, body);
 
-      // 1. Check for specific backend errors
-      if (response.containsKey('error')) {
-        throw Exception(response['error']);
-      }
-      
-      // 2. Check for FastAPI validation errors (422)
-      if (response.containsKey('detail')) {
-        throw Exception("API Error: ${response['detail']}");
-      }
+      if (response == null) throw Exception("Server returned null response");
+      if (response.containsKey('error')) throw Exception(response['error']);
+      if (response.containsKey('detail')) throw Exception("API Error: ${response['detail']}");
 
-      // 3. Success Case
       if (response.containsKey('forecast')) {
-        return response['forecast'];
+        return ForecastResult(
+          forecastDate: response['forecast_date'] ?? 'unknown',
+          forecast: Map<String, dynamic>.from(response['forecast']),
+        );
       } else {
-        // If we get here, the JSON is valid but missing the 'forecast' key
         throw Exception("Invalid format. Available keys: ${response.keys.toList()}");
       }
     } catch (e) {
-      print("Forecast Service Crash: $e");
+      print("ForecastService.fetchForecast error: $e");
       rethrow;
     }
   }

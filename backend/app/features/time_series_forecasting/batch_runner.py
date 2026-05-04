@@ -21,7 +21,6 @@ backend_dir = os.path.abspath(os.path.join(current_file_dir, "../../"))
 
 model_path = os.path.join(backend_dir, "models", "time_series_forecasting")
 forecast_dir = os.path.join(backend_dir, "forecast", "time_series_forecasting")
-output_file = os.path.join(forecast_dir, "daily_forecast.json")
 
 # Ensure output directory exists
 os.makedirs(forecast_dir, exist_ok=True)
@@ -318,9 +317,11 @@ def run_batch():
         del combined_df_base
         gc.collect()
 
-    # Save Final as a JSON
+    # Save Final as a JSON, named by the forecast date (tomorrow)
+    forecast_date = (datetime.date.today() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    output_file = os.path.join(forecast_dir, f"forecast_{forecast_date}.json")
     with open(output_file, "w") as f:
-        json.dump({"updated_at": str(datetime.datetime.now()), "forecasts": full_forecast}, f)
+        json.dump({"forecast_date": forecast_date, "updated_at": str(datetime.datetime.now()), "forecasts": full_forecast}, f)
     print(f"\nForecast saved to {output_file}")
 
 if __name__ == "__main__":
