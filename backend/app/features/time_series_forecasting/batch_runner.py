@@ -34,7 +34,9 @@ pollutants = ['PM2 5 Conc', 'PM10 Conc', 'NO2 Conc', 'O3 Conc', 'SO2 Conc']
 forecast_horizon = 24
 
 # Setup the Open-Meteo API client with cache and retry on error
-cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
+# Use absolute path so caching works regardless of working directory
+_cache_path = os.path.join(current_file_dir, '.cache')
+cache_session = requests_cache.CachedSession(_cache_path, expire_after = 3600)
 retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
 openmeteo = openmeteo_requests.Client(session = retry_session)
 

@@ -13,16 +13,10 @@ app.include_router(spatial_router, prefix="/spatial", tags=["Spatial"])
 app.include_router(aqi_router, prefix="/aqi", tags=["AQI"])
 app.include_router(anomaly_router, prefix="/anomaly", tags=["Anomaly"])
 
-origins = [
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "*"
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

@@ -1,0 +1,16 @@
+[Unit]
+Description=AeroCast FastAPI Backend
+After=network.target
+
+[Service]
+Type=simple
+User=<YOUR_VM_USERNAME>
+WorkingDirectory=/home/<YOUR_VM_USERNAME>/aerocast/backend
+ExecStart=/home/<YOUR_VM_USERNAME>/aerocast/backend/start.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
