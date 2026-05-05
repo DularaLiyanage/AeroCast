@@ -10,6 +10,7 @@ from .air_quality_logic import (
     TARGETS, STATION_META, load_artifacts, predict_one_station,
     clamp_value, make_heatmap_png_base64, ensemble_spatial_prediction
 )
+from .spatial_xai_service import generate_explanation
 
 router = APIRouter()
 
@@ -278,6 +279,9 @@ def hover_value(lat: float, lon: float, target: str, datetime_str: str):
                 status_code=400,
                 detail="Invalid datetime_str. Use format: 'YYYY-MM-DD HH:MM:SS'"
             )
+        # Ensure naive datetime for comparison
+        if dt_base.tzinfo is not None:
+            dt_base = dt_base.tz_localize(None)
 
         # Calculate distance to nearest station
         def haversine_distance(lat1, lon1, lat2, lon2):
@@ -333,10 +337,24 @@ def hover_value(lat: float, lon: float, target: str, datetime_str: str):
         )
         print(f"  ✓ Interpolated value: {ensemble_pred:.2f}", flush=True)
 
+        # Generate XAI Response
+        xai_data = generate_explanation(
+            lat=lat,
+            lon=lon,
+            target=target,
+            batt_lat=STATION_META["Battaramulla"]["lat"],
+            batt_lon=STATION_META["Battaramulla"]["lon"],
+            batt_pred=b_pred,
+            kandy_lat=STATION_META["Kandy"]["lat"],
+            kandy_lon=STATION_META["Kandy"]["lon"],
+            kandy_pred=k_pred,
+            final_pred=ensemble_pred
+        )
+
         return {
             "method": "ensemble",
-            "value": float(ensemble_pred),
-            "distance_km": None
+            "distance_km": None,
+            **xai_data
         }
 
     except HTTPException:

@@ -774,6 +774,11 @@ class _MapPageState extends State<MapPage> {
   double? hoverDistanceKm;
   bool isHoverLoading = false;
   
+  String? hoverExplanation;
+  String? hoverExtraLine;
+  double? battPercent;
+  double? kandyPercent;
+  
   final MapController _mapCtrl = MapController();
   Offset? hoverScreenPosition;
 
@@ -793,6 +798,10 @@ class _MapPageState extends State<MapPage> {
       hoverValue = null;
       hoverMethod = null;
       hoverDistanceKm = null;
+      hoverExplanation = null;
+      hoverExtraLine = null;
+      battPercent = null;
+      kandyPercent = null;
     });
 
     final url = Uri.parse("$apiBase/spatial/hover_value?lat=${point.latitude}&lon=${point.longitude}&target=${widget.target}&datetime_str=${Uri.encodeComponent(widget.datetimeStr)}");
@@ -804,9 +813,19 @@ class _MapPageState extends State<MapPage> {
           hoverMethod = data["method"];
           if (hoverMethod == "ensemble") {
             hoverValue = (data["value"] as num?)?.toDouble();
+            hoverExplanation = data["explanation"];
+            hoverExtraLine = data["extra_line"];
+            if (data["weights"] != null) {
+              battPercent = (data["weights"]["battaramulla_percent"] as num?)?.toDouble();
+              kandyPercent = (data["weights"]["kandy_percent"] as num?)?.toDouble();
+            }
             hoverDistanceKm = null;
           } else if (hoverMethod == "out_of_range") {
             hoverValue = null;
+            hoverExplanation = null;
+            hoverExtraLine = null;
+            battPercent = null;
+            kandyPercent = null;
             hoverDistanceKm = (data["distance_km"] as num?)?.toDouble();
           }
         });
@@ -876,8 +895,14 @@ class _MapPageState extends State<MapPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    if (leftPos + 220 > screenWidth) leftPos = hoverScreenPosition!.dx - 240;
-    if (topPos + 150 > screenHeight) topPos = hoverScreenPosition!.dy - 160;
+    double cardWidth = hoverExplanation != null ? 300 : 220;
+    double cardHeight = hoverExplanation != null ? 240 : 150;
+
+    if (leftPos + cardWidth > screenWidth) leftPos = hoverScreenPosition!.dx - cardWidth - 10;
+    if (topPos + cardHeight > screenHeight) topPos = hoverScreenPosition!.dy - cardHeight - 10;
+
+    if (leftPos < 10) leftPos = 10;
+    if (topPos < kToolbarHeight + 10) topPos = kToolbarHeight + 10;
 
     return Positioned(
       left: leftPos,
@@ -887,7 +912,7 @@ class _MapPageState extends State<MapPage> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            width: 220,
+            width: cardWidth,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
               borderRadius: BorderRadius.circular(16),
@@ -939,7 +964,73 @@ class _MapPageState extends State<MapPage> {
                           Text(widget.target, style: const TextStyle(fontSize: 14, color: Colors.black54)),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
+                      if (hoverExplanation != null && hoverExplanation!.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.insights, size: 14, color: Colors.blue.shade700),
+                                  const SizedBox(width: 6),
+                                  Text("AI Explanation", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(hoverExplanation!, style: TextStyle(fontSize: 12, color: Colors.grey.shade800)),
+                              if (hoverExtraLine != null && hoverExtraLine!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(hoverExtraLine!, style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontStyle: FontStyle.italic)),
+                              ]
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      if (battPercent != null && kandyPercent != null) ...[
+                        const Text("Spatial Pull:", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black54)),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: battPercent!.round() > 0 ? battPercent!.round() : 1,
+                              child: Container(
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.only(topLeft: Radius.circular(3), bottomLeft: Radius.circular(3)),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: kandyPercent!.round() > 0 ? kandyPercent!.round() : 1,
+                              child: Container(
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: Colors.blueAccent,
+                                  borderRadius: BorderRadius.only(topRight: Radius.circular(3), bottomRight: Radius.circular(3)),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Battaramulla ${battPercent!.toStringAsFixed(0)}%", style: const TextStyle(fontSize: 9, color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                            Text("${kandyPercent!.toStringAsFixed(0)}% Kandy", style: const TextStyle(fontSize: 9, color: Colors.blueAccent, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),

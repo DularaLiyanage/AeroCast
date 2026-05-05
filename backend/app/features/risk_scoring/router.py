@@ -159,9 +159,16 @@ async def predict_24h(request: PredictionRequest):
     try:
         # 1. Fetch Weather
         weather_df = utils.get_open_meteo_data(location)
+
+        # 1b. Fetch historical air-quality data for real lag features (best-effort)
+        air_quality_df = utils.get_open_meteo_air_quality_data(location)
         
         # 2. Prepare Input
-        input_array, input_df_features = utils.prepare_input(weather_df, assets["hourly_averages"])
+        input_array, input_df_features = utils.prepare_input(
+            weather_df,
+            assets["hourly_averages"],
+            air_quality_df=air_quality_df,
+        )
         
         # 3. Scale Input
         reshaped_input = input_array.reshape(24, 26)
@@ -204,9 +211,17 @@ async def predict_24h(request: PredictionRequest):
             # A. Fetch Future Weather
             forecast_df = utils.get_open_meteo_forecast(location)
             
-            # B. Prepare Input (Similar to history, but for future)
-            # Use 'hourly_averages' fallback same as before. 
-            forecast_input_array, forecast_input_df = utils.prepare_input(forecast_df, assets["hourly_averages"])
+            # A2. Fetch Forecasted Air Quality for future lag features
+            forecast_air_quality_df = utils.get_open_meteo_air_quality_forecast(location)
+            
+            # B. Prepare Input - Use HYBRID approach: historical AQ data + forecasted AQ data
+            # For near-term lags, use historical; for far-term lags, use forecasted
+            forecast_input_array, forecast_input_df = utils.prepare_input(
+                forecast_df, 
+                assets["hourly_averages"],
+                air_quality_df=air_quality_df,  # Historical data for early lags
+                air_quality_forecast_df=forecast_air_quality_df  # Forecasted data for future lags
+            )
             
             # C. Reshape & Scale
             forecast_reshaped = forecast_input_array.reshape(24, 26)
@@ -264,7 +279,7 @@ async def predict_24h(request: PredictionRequest):
                      
                      if health_alert:
                          # Append time to message
-                         health_alert["message"] = f"{health_alert['message']} (Expected around {next_hour_time})"
+                         health_alert["message"] = f"[Expected around {next_hour_time}] {health_alert['message']}"
                          
                          # Add color based on risk level
                          alert_level, alert_color = get_risk_info(next_hour_val, assets["config"])
@@ -285,7 +300,7 @@ async def predict_24h(request: PredictionRequest):
         
         health_alert = utils.get_cea_alert(test_aqi)
         if health_alert:
-            health_alert["message"] = f"{health_alert['message']} (Expected around {test_time_str})"
+            health_alert["message"] = f"[Expected around {test_time_str}] {health_alert['message']}"
             _, alert_color = get_risk_info(test_aqi, assets["config"])
             health_alert["color"] = alert_color
             
