@@ -296,7 +296,7 @@ def run_batch():
                     final_val = np.where(hybrid_val < 0, base_pred[:min_len], hybrid_val)
 
                     final_val = np.maximum(final_val, 0.0)
-                            
+
                     loc_results[poll] = final_val.tolist()
                     print("Done")
 

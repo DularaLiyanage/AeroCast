@@ -51,6 +51,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
     setState(() { isLoading = true; isError = false; });
     try {
       final result = await _api.fetchForecast(selectedLocation, date: selectedDate);
+      if (!mounted) return;
       setState(() {
         forecastData = result.forecast;
         forecastDate = result.forecastDate;
@@ -60,7 +61,6 @@ class _ForecastScreenState extends State<ForecastScreen> {
         }
       });
     } catch (e) {
-      // Fix 5: if we already have data, keep showing it and surface a snackbar
       if (forecastData == null) {
         setState(() => isError = true);
       } else if (mounted) {
@@ -97,7 +97,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
     return ForecastUtils.getTopXaiDriver(raw);
   }
 
-  // Fix 7: sentence-case location names
+// Fix 7: sentence-case location names
   String _formatLocation(String loc) =>
       loc.isEmpty ? loc : loc[0].toUpperCase() + loc.substring(1);
 
@@ -179,7 +179,7 @@ class _ForecastScreenState extends State<ForecastScreen> {
                             values: forecastData![selectedPollutant],
                             pollutant: selectedPollutant,
                             selectedHourIndex: selectedHourIndex,
-                            forecastDate: forecastDate, // Fix 1
+                            forecastDate: forecastDate,
                             onHourChanged: (newIndex) {
                               setState(() => selectedHourIndex = newIndex);
                             },

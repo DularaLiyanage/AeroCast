@@ -10,7 +10,7 @@ class ForecastChart extends StatelessWidget {
   final String pollutant;
   final int selectedHourIndex;
   final Function(int) onHourChanged;
-  final String? forecastDate; // Fix 1: actual forecast date for correct time labels
+  final String? forecastDate;
 
   const ForecastChart({
     super.key,
@@ -43,7 +43,7 @@ class ForecastChart extends StatelessWidget {
     // Fix 2: use correct unit per pollutant
     final unit = ForecastUtils.getUnit(pollutant);
 
-    LineChartBarData lineBarData = LineChartBarData(
+    final LineChartBarData lineBarData = LineChartBarData(
       spots: spots,
       isCurved: true,
       preventCurveOverShooting: true,
@@ -59,6 +59,7 @@ class ForecastChart extends StatelessWidget {
         ),
       ),
     );
+
 
     return Container(
       height: 300,
@@ -191,7 +192,6 @@ class ForecastChart extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Fix 11: removed "Slide to see specific hour" hint — slider is self-explanatory
           SizedBox(
             height: 30,
             child: SliderTheme(
