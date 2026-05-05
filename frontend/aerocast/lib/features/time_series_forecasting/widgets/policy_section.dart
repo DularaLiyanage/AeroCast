@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../utils/forecast_utils.dart'; // Import the utils
+import '../utils/forecast_utils.dart';
 import '../../risk_scoring/utils/constants.dart';
 
-class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
+class PolicySection extends StatelessWidget {
   final List<dynamic> values;
   final String pollutant;
+  final Map<String, dynamic>? xaiData;
 
-  const PolicySection({super.key, required this.values, required this.pollutant});
+  const PolicySection({
+    super.key,
+    required this.values,
+    required this.pollutant,
+    this.xaiData,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +55,22 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
       );
     }
 
-    // 2. Get Specific Actions
-    // FIX: Use ForecastUtils.policyActions
-    // Note: We need to adapt the structure slightly if your Utils structure differs, 
-    // but assuming it matches the map we created earlier:
-    var actions = ForecastUtils.policyActions[pollutant] ?? ForecastUtils.policyActions["default"]!;
+    // 2. Get Specific Actions — safe lookup, no crash if pollutant missing
+    final actions = ForecastUtils.policyActions[pollutant];
+    if (actions == null || actions.isEmpty) return const SizedBox.shrink();
+
+    // 3. Derive XAI context (dominant category + tip)
+    String? dominantCategory;
+    if (xaiData != null && xaiData!.isNotEmpty) {
+      dominantCategory = ForecastUtils.getDominantXaiCategory(xaiData!);
+    }
+    final contextTip = dominantCategory != null
+        ? ForecastUtils.getXaiContextualTip(dominantCategory)
+        : null;
+    final contextColor =
+        ForecastUtils.xaiCategoryColors[dominantCategory] ?? Colors.blueGrey;
+    final contextIcon =
+        ForecastUtils.xaiCategoryIcons[dominantCategory] ?? Icons.info_outline;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 20),
@@ -99,7 +116,40 @@ class PolicySection extends StatelessWidget { // FIX: Renamed from ForecastChart
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+
+          // XAI context note
+          if (contextTip != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: contextColor.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border(left: BorderSide(color: contextColor, width: 3)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(contextIcon, size: 14, color: contextColor),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      contextTip,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: contextColor,
+                        fontWeight: FontWeight.w500,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           ...actions.map((action) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12.0),

@@ -3,16 +3,18 @@ import 'package:google_fonts/google_fonts.dart';
 import '../utils/forecast_utils.dart'; 
 import '../../risk_scoring/utils/constants.dart';
 
-class HeroCard extends StatelessWidget { 
+class HeroCard extends StatelessWidget {
   final double value;
   final String pollutant;
   final String time;
+  final String? topDriver;
 
   const HeroCard({
     super.key,
     required this.value,
     required this.pollutant,
     required this.time,
+    this.topDriver,
   });
 
   @override
@@ -101,7 +103,7 @@ class HeroCard extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: Text(
-                    "µg/m³",
+                    ForecastUtils.getUnit(pollutant),
                     style: GoogleFonts.poppins(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 18,
@@ -112,8 +114,37 @@ class HeroCard extends StatelessWidget {
               ],
             ),
           ),
+
+          if (topDriver != null) ...[
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.insights_rounded,
+                        size: 13, color: Colors.white.withValues(alpha: 0.9)),
+                    const SizedBox(width: 5),
+                    Text(
+                      "Driven by $topDriver",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
-}
+}

@@ -102,8 +102,14 @@ class ForecastUtils {
       default: return Icons.admin_panel_settings;
     }
   }
+  
+  static String getUnit(String pollutant) {
+    if (pollutant == "PM2 5 Conc" || pollutant == "PM10 Conc") {
+      return "µg/m³";
+    }
+    return "ppb";
+  }
 
-  // ... [Paste your policyActions Map here] ...
   static final Map<String, List<Map<String, String>>> policyActions = {
     "PM10 Conc": [
       {"icon": "construction", "text": "Mandate water sprinkling at construction sites to reduce road dust."},
@@ -130,4 +136,116 @@ class ForecastUtils {
       {"icon": "factory", "text": "Ensure proper ventilation in industrial heating zones."},
     ]
   };
+
+  // ── XAI Utilities ──────────────────────────────────────────────────────────
+
+  static const Map<String, String> xaiFriendlyNames = {
+    "AT": "Temperature",
+    "RH": "Humidity",
+    "BP": "Atmospheric Pressure",
+    "Rain Gauge": "Rainfall",
+    "Solar Radiation": "Solar Intensity",
+    "WD_sin": "Wind Direction",
+    "WD_cos": "Wind Direction",
+    "Heat_Humidity_Interaction": "Heat Index",
+    "time_idx": "Long-term Trend",
+    "traffic_hour": "Traffic Patterns",
+    "is_weekend": "Weekend Effect",
+    "is_holiday": "Holiday Effect",
+    "hour": "Time of Day",
+    "month": "Seasonal Effect",
+    "monsoon_phase_First Inter-monsoon": "Monsoon Season",
+    "monsoon_phase_Northeast Monsoon": "Monsoon Season",
+    "monsoon_phase_Second Inter-monsoon": "Monsoon Season",
+    "monsoon_phase_Southwest Monsoon": "Monsoon Season",
+    "sarimax_pred_scaled": "Historical Baseline",
+    "PM2 5 Conc_lag24": "Past Pollution Levels",
+    "PM2 5 Conc_rolling24_mean": "Past Pollution Levels",
+    "PM10 Conc_lag24": "Past Dust Levels",
+    "PM10 Conc_rolling24_mean": "Past Dust Levels",
+  };
+
+  static const Map<String, String> xaiDriverCategories = {
+    "Temperature": "Weather",
+    "Humidity": "Weather",
+    "Atmospheric Pressure": "Weather",
+    "Rainfall": "Weather",
+    "Solar Intensity": "Weather",
+    "Wind Direction": "Weather",
+    "Heat Index": "Weather",
+    "Long-term Trend": "Time",
+    "Traffic Patterns": "Time",
+    "Weekend Effect": "Time",
+    "Holiday Effect": "Time",
+    "Time of Day": "Time",
+    "Seasonal Effect": "Season",
+    "Monsoon Season": "Season",
+    "Historical Baseline": "Historical",
+    "Past Pollution Levels": "Historical",
+    "Past Dust Levels": "Historical",
+  };
+
+  static const Map<String, Color> xaiCategoryColors = {
+    "Weather": Color(0xFF1E88E5),
+    "Time": Color(0xFF8E24AA),
+    "Season": Color(0xFF43A047),
+    "Historical": Color(0xFFF4511E),
+  };
+
+  static const Map<String, IconData> xaiCategoryIcons = {
+    "Weather": Icons.wb_cloudy_outlined,
+    "Time": Icons.schedule_rounded,
+    "Season": Icons.eco_outlined,
+    "Historical": Icons.show_chart_rounded,
+  };
+
+  // Groups raw 0–1 weights by friendly name, converts to %, sorts descending.
+  static List<MapEntry<String, double>> processXaiDrivers(
+      Map<String, dynamic> raw, {int topN = 5}) {
+    final Map<String, double> grouped = {};
+    raw.forEach((key, value) {
+      final name = xaiFriendlyNames[key] ?? key.replaceAll('_', ' ');
+      grouped[name] = (grouped[name] ?? 0.0) + (value as num).toDouble();
+    });
+    final pct = grouped.map((k, v) => MapEntry(k, v * 100.0));
+    final sorted = pct.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.length > topN ? sorted.sublist(0, topN) : sorted;
+  }
+
+  static String? getTopXaiDriver(Map<String, dynamic> raw) {
+    final drivers = processXaiDrivers(raw, topN: 1);
+    return drivers.isNotEmpty ? drivers.first.key : null;
+  }
+
+  // Returns category totals as percentages, e.g. {"Weather": 42.3, "Time": 31.1, ...}
+  static Map<String, double> getXaiCategoryBreakdown(Map<String, dynamic> raw) {
+    final Map<String, double> breakdown = {};
+    raw.forEach((key, value) {
+      final name = xaiFriendlyNames[key] ?? key.replaceAll('_', ' ');
+      final category = xaiDriverCategories[name] ?? 'Weather';
+      breakdown[category] = (breakdown[category] ?? 0.0) + (value as num).toDouble();
+    });
+    return breakdown.map((k, v) => MapEntry(k, v * 100.0));
+  }
+
+  static String getDominantXaiCategory(Map<String, dynamic> raw) {
+    final breakdown = getXaiCategoryBreakdown(raw);
+    if (breakdown.isEmpty) return 'Weather';
+    return breakdown.entries.reduce((a, b) => a.value > b.value ? a : b).key;
+  }
+
+  static String getXaiContextualTip(String category) {
+    switch (category) {
+      case 'Weather':
+        return 'Wind, pressure, and temperature are the main influence. A shift in weather could quickly change these levels.';
+      case 'Historical':
+        return 'Levels are following a persistent trend from recent days. This is likely to continue unless conditions change significantly.';
+      case 'Time':
+        return 'Daily commute patterns are a key driver. Expect higher levels during rush hours (7–10 AM and 5–8 PM).';
+      case 'Season':
+        return 'Monsoon and seasonal patterns are the primary influence on this forecast.';
+      default:
+        return 'Multiple factors are contributing to this forecast.';
+    }
+  }
 }

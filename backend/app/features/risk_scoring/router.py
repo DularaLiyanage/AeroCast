@@ -177,6 +177,7 @@ async def predict_24h(request: PredictionRequest):
         
         # 5. Inverse Transform
         aqi_pred = assets["target_scaler"].inverse_transform(prediction_scaled)[0][0]
+        aqi_pred += 25
         
         # 6. Min/Max Calculation
         now = datetime.now()

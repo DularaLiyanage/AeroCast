@@ -181,7 +181,7 @@ class _HomeScreenState extends State<HomeScreen> {
               NavigationDestination(
                 icon: Icon(Icons.health_and_safety_outlined),
                 selectedIcon: Icon(Icons.health_and_safety_rounded),
-                label: 'Dashboard',
+                label: 'AQI',
               ),
               NavigationDestination(
                 icon: Icon(Icons.show_chart_outlined),
