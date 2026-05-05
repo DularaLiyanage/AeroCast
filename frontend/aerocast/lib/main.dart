@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:workmanager/workmanager.dart';
 
 // Import component screens
 import 'features/time_series_forecasting/time_series_forecasting.dart';
@@ -10,8 +11,48 @@ import 'features/anomaly_detection/anomaly_detection.dart';
 import 'features/risk_scoring/risk_scoring.dart';
 import 'features/risk_scoring/providers/aqi_provider.dart';
 import 'features/risk_scoring/utils/constants.dart';
+import 'features/risk_scoring/services/api_service.dart';
+import 'services/notification_service.dart';
 
-void main() {
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      final location = inputData?["location"] ?? "battaramulla";
+      final apiService = ApiService();
+      final predictions = await apiService.fetchPredictions(location);
+      
+      if (predictions.isNotEmpty) {
+        final current = predictions.first;
+        if (current.healthAlert != null) {
+          final title = current.healthAlert!['title'] ?? 'AQI Health Alert';
+          final message = current.healthAlert!['message'] ?? 'Air Quality is reaching dangerous levels.';
+          await NotificationService.showAqiAlert(title: title, message: message, id: 1);
+        }
+      }
+    } catch (e) {
+      debugPrint("Background task failed: $e");
+    }
+    return Future.value(true);
+  });
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  await NotificationService.initialize();
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: true, // Shows notification when background task runs
+  );
+  
+  Workmanager().registerPeriodicTask(
+    "1",
+    "aqiCheckTask",
+    frequency: const Duration(hours: 1),
+    inputData: {"location": "battaramulla"}, // Default background fetch location
+  );
+
   runApp(const AeroCastApp());
 }
 
