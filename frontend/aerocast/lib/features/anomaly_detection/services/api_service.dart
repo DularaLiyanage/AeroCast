@@ -1,12 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/air_quality.dart';
+import '../../../core/config.dart';
 
 class ApiService {
-  // NOTE: the backend server listens on port 8000 (same as the other
-  // feature modules). The previous 8080 value caused the emulator to hang
-  // until the underlying HTTP client finally timed out.
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static String get baseUrl => AppConfig.baseUrl;
 
   Future<AirQualityData> fetchForecast(String location) async {
     // add a client‑side timeout so the UI can recover quickly instead of

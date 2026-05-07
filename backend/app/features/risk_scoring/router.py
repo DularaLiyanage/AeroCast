@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, Body
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from typing import Optional
+import pytz
+
+SL_TZ = pytz.timezone("Asia/Colombo")
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -187,7 +190,7 @@ async def predict_24h(request: PredictionRequest):
         aqi_pred += 25
         
         # 6. Min/Max Calculation
-        now = datetime.now()
+        now = datetime.now(SL_TZ)
         current_hour = now.hour
         
         q_hats = assets["config"].get("q_hat_90", [])
@@ -295,7 +298,7 @@ async def predict_24h(request: PredictionRequest):
         
         # --- TEST ALERT OVERRIDE ---
         test_aqi = 105.0
-        now_next = datetime.now() + timedelta(hours=1)
+        now_next = datetime.now(SL_TZ) + timedelta(hours=1)
         test_time_str = now_next.replace(minute=0, second=0).strftime("%H:%M")
         
         health_alert = utils.get_cea_alert(test_aqi)

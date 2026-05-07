@@ -7,8 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 
-// Update this to your backend IP
-const String apiBase = "http://10.0.2.2:8000";
+import 'package:aerocast/core/config.dart';
+// ignore: prefer_const_declarations
+final String apiBase = AppConfig.baseUrl;
 
 // OpenStreetMap User-Agent: Custom TileProvider with proper HTTP headers for OSM compliance
 class UserAgentTileProvider extends TileProvider {

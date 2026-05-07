@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/aqi_prediction.dart';
+import '../../../core/config.dart';
 
 class ApiService {
-  // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web, or your machine IP for physical devices.
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  static String get baseUrl => AppConfig.baseUrl;
 
   Future<List<AqiPrediction>> fetchPredictions(String location) async {
     final url = Uri.parse('$baseUrl/aqi/predict_24h');

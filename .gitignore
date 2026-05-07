@@ -66,3 +66,9 @@ lightning_logs/
 *.zip
 *.tar
 *.gz
+
+# Generated files
+backend/.cache.sqlite
+frontend/aerocast/linux/flutter/generated_plugins.cmake
+frontend/aerocast/macos/Flutter/GeneratedPluginRegistrant.swift
+frontend/aerocast/windows/flutter/generated_plugins.cmake

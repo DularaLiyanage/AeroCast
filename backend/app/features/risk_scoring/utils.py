@@ -2,11 +2,14 @@ import pandas as pd
 import numpy as np
 import requests
 import holidays
+import pytz
 from datetime import datetime, timedelta
 from typing import Optional
 import time
 import warnings
 from sklearn.exceptions import InconsistentVersionWarning
+
+SL_TZ = pytz.timezone("Asia/Colombo")
 
 # Suppress sklearn version warnings
 warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
@@ -111,11 +114,11 @@ def get_open_meteo_data(location_name: str):
     df = df.resample('h').interpolate(method='linear')
     df = df.reset_index()
     
-    now = datetime.now()
+    now = datetime.now(SL_TZ).replace(tzinfo=None)
     current_hour = now.replace(minute=0, second=0, microsecond=0)
-    
+
     # Filter <= current_hour (History)
-    df = df[df['time'] < current_hour] 
+    df = df[df['time'] < current_hour]
     
     # Take the last 24 entries
     if len(df) < 24:
@@ -171,9 +174,9 @@ def get_open_meteo_forecast(location_name: str):
     df = df.reset_index()
     
     # Filter for Future
-    now = datetime.now()
+    now = datetime.now(SL_TZ).replace(tzinfo=None)
     current_hour = now.replace(minute=0, second=0, microsecond=0)
-    
+
     df = df[df['time'] > current_hour]
     
     if len(df) < 24:
@@ -325,7 +328,7 @@ def _build_real_lag_features(
     
     # Normalize input times to hour precision
     normalized_times = pd.to_datetime(weather_times).dt.floor("h")
-    now = pd.Timestamp.now().floor("h")
+    now = pd.Timestamp.now(tz=SL_TZ).tz_localize(None).floor("h")
     
     for target_feature, (aq_column, lag_hours) in AIR_QUALITY_FEATURE_MAP.items():
         values = []
